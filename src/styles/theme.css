@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Theme variables
+   Central place for the app's colors, spacing and other design tokens.
+   ========================================================================== */
+
+:root {
+  /* Shopee-inspired brand palette */
+  --brand-50: #fff4f1;
+  --brand-100: #ffe3db;
+  --brand-200: #ffc7b8;
+  --brand-300: #fda48d;
+  --brand-400: #f87f5f;
+  --brand-500: #f2653d;
+  --brand-600: #ee4d2d;
+  --brand-700: #d5401f;
+
+  /* Neutral grays used for text, borders and backgrounds */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* Status colors */
+  --green-50: #ecfdf5;
+  --green-500: #10b981;
+  --green-600: #059669;
+  --amber-50: #fffbeb;
+  --amber-400: #fbbf24;
+  --amber-600: #d97706;
+  --red-50: #fff1f2;
+  --red-500: #f43f5e;
+  --red-600: #e11d48;
+  --sky-50: #f0f9ff;
+  --sky-600: #0284c7;
+
+  --page-bg: #f5f5f5;
+  --white: #ffffff;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.18);
+}

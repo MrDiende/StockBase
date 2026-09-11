@@ -1,0 +1,338 @@
+/* ==========================================================================
+   Base styles and small reusable UI building blocks
+   (buttons, form fields, cards, badges, tables).
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--page-bg);
+  color: var(--gray-800);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---- Layout ------------------------------------------------------------- */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main-column {
+  display: flex;
+  min-height: 100vh;
+  flex: 1;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  padding: 24px 16px;
+}
+
+@media (min-width: 640px) {
+  .page-content {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-content {
+    padding: 24px 32px;
+  }
+}
+
+/* ---- Cards -------------------------------------------------------------- */
+
+.card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  background-color: var(--white);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.card-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--brand-600);
+  color: var(--white);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-700);
+}
+
+.btn-secondary {
+  border: 1px solid var(--gray-200);
+  background-color: var(--white);
+  color: var(--gray-600);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--gray-50);
+}
+
+.btn-danger {
+  background-color: var(--red-600);
+  color: var(--white);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #be123c;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-small {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* Icon-only round/square button */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  color: var(--gray-400);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background-color: var(--gray-100);
+}
+
+.icon-btn-brand:hover {
+  background-color: var(--brand-50);
+  color: var(--brand-600);
+}
+
+.icon-btn-danger:hover {
+  background-color: var(--red-50);
+  color: var(--red-600);
+}
+
+/* ---- Form fields -------------------------------------------------------- */
+
+.field {
+  display: block;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+.field-hint {
+  color: var(--gray-300);
+}
+
+.input,
+.select {
+  width: 100%;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--gray-800);
+  background-color: var(--white);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 2px var(--brand-100);
+}
+
+.input-readonly {
+  cursor: not-allowed;
+  background-color: var(--gray-50);
+  color: var(--gray-500);
+}
+
+.form-error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--red-600);
+}
+
+/* ---- Badges / pills ----------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-full);
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-neutral {
+  background-color: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.badge-green {
+  background-color: var(--green-50);
+  color: var(--green-600);
+}
+
+.badge-amber {
+  background-color: var(--amber-50);
+  color: var(--amber-600);
+}
+
+.badge-red {
+  background-color: var(--red-50);
+  color: var(--red-600);
+}
+
+.badge-sky {
+  background-color: var(--sky-50);
+  color: var(--sky-600);
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+}
+
+/* ---- Tables ------------------------------------------------------------- */
+
+.table-wrapper {
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  background-color: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.data-table thead tr {
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.data-table th {
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+}
+
+.data-table td {
+  padding: 12px 20px;
+  color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-50);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(248, 250, 252, 0.6);
+}
+
+.table-empty {
+  padding: 48px 20px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--gray-400);
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sort-btn:hover {
+  color: var(--gray-600);
+}
+
+/* ---- Utility helpers ---------------------------------------------------- */
+
+.muted {
+  color: var(--gray-400);
+}
+
+.text-danger {
+  color: var(--red-600);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
