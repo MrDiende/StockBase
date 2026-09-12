@@ -57,14 +57,22 @@ The `profiles` table stores:
 Each profile is keyed by the authenticated user's ID and can only be read or
 updated by that user.
 
-### Password reset
+### Account email and passwords
 
-Password changes use Supabase's password-reset email flow:
+New accounts must confirm their email address before signing in. The
+confirmation email redirects to the StockBase application after the user clicks
+the confirmation link.
 
-1. Open **Settings** in StockBase.
-2. Click **Send reset link**.
-3. Open the reset email and click **Reset password**.
-4. Enter and confirm the new password in StockBase.
+Users can change their password directly from **Settings** by entering:
+
+1. Current password.
+2. New password.
+3. Confirm new password.
+
+The Settings password fields include visibility controls and require a new
+password of at least 12 characters. Users who cannot remember their password
+can select **Forgot password?** on the sign-in page to request a Supabase
+password-reset email.
 
 Add the local and production application URLs under
 **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**:
@@ -78,31 +86,30 @@ The **Reset password** email template is managed under
 **Authentication → Emails → Reset password**. Configure custom SMTP if you
 need to edit the default template or send mail through your own provider.
 
-#### Brevo SMTP configuration
+### Supabase authentication rate limits
 
-Brevo can be used as the custom SMTP provider for Supabase authentication
-emails:
+Supabase protects authentication email actions with rate limits. These limits
+can affect:
 
-1. Create or sign in to a [Brevo](https://www.brevo.com/) account.
-2. Verify the sender email under **Settings → Senders, domains, IPs**.
-3. Open **Settings → SMTP & API**.
-4. Generate an SMTP key and copy it when it is displayed.
-5. In Supabase, open **Authentication → Emails → SMTP Settings** and enable
-   custom SMTP.
-6. Enter the following values:
+- Creating accounts and sending confirmation emails.
+- Resending confirmation emails.
+- Using **Forgot password?** and sending reset emails.
+- Repeated sign-in attempts from the same account or IP address.
 
-```text
-Host: smtp-relay.brevo.com
-Port: 587
-Username: the Login value shown in Brevo under Your SMTP Settings
-Password: the generated Brevo SMTP key
-Sender email: the verified Brevo sender email
-Sender name: StockBase
-```
+Avoid repeatedly clicking signup, resend, or password-reset buttons. Wait for
+the interval in the error message before trying again. A rate-limit response
+does not mean that the account was created more than once; check the user's
+email and the Supabase Authentication logs first.
 
-Save the Supabase SMTP settings before testing account confirmation or password
-reset emails. Keep the SMTP key private: never add it to frontend code,
-`.env.local`, Vercel environment variables, or GitHub.
+Review the limits in **Supabase Dashboard → Authentication → Rate Limits**.
+Custom SMTP can increase email delivery capacity, but Supabase authentication
+rate limits and provider limits still apply. For production use, configure a
+verified sender and a supported SMTP provider rather than relying on the
+default email service.
+
+If testing locally, use separate test accounts and avoid repeated requests toW
+the same address. Never bypass rate limits by exposing service-role keys in the
+frontend.
 
 ## Run locally
 
