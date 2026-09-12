@@ -90,7 +90,8 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
     });
     setSendingReset(false);
     if (resetError) {
-      setError(resetError.message);
+      console.error("Could not send the password reset email.", resetError);
+      setError(`Could not send the password reset email: ${resetError.message}`);
     } else {
       setMessage(`A password reset link was sent to ${user.email}.`);
     }
