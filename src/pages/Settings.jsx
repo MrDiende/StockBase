@@ -1,3 +1,4 @@
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const initialProfile = {
@@ -10,11 +11,14 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
   const [profile, setProfile] = useState(initialProfile);
   const [savedProfile, setSavedProfile] = useState(initialProfile);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [sendingReset, setSendingReset] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -81,22 +85,6 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
     setError("");
   };
 
-  const requestPasswordReset = async () => {
-    setSendingReset(true);
-    setMessage("");
-    setError("");
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: window.location.origin,
-    });
-    setSendingReset(false);
-    if (resetError) {
-      console.error("Could not send the password reset email.", resetError);
-      setError(`Could not send the password reset email: ${resetError.message}`);
-    } else {
-      setMessage(`A password reset link was sent to ${user.email}.`);
-    }
-  };
-
   const changePassword = async (event) => {
     event.preventDefault();
     setMessage("");
@@ -110,11 +98,21 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
       return;
     }
     setChangingPassword(true);
+    const verification = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verification.error) {
+      setChangingPassword(false);
+      setError("Current password is incorrect.");
+      return;
+    }
     const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPassword(false);
     if (passwordError) {
       setError(passwordError.message);
     } else {
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       onRecoveryComplete?.();
@@ -191,28 +189,38 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
             <form className="card form settings-password-form" onSubmit={changePassword}>
               <div>
                 <h2 className="card-title">Change password</h2>
-                <p className="card-subtitle">Receive a secure password reset link by email.</p>
+                <p className="card-subtitle">Verify your current password before setting a new one.</p>
               </div>
-              {!passwordRecovery ? (
-                <button className="btn btn-primary settings-password-button" type="button" onClick={requestPasswordReset} disabled={sendingReset}>
-                  {sendingReset ? "Sending..." : "Send reset link"}
-                </button>
-              ) : (
-                <>
-                  <p className="settings-recovery-note">Choose a new password for your account.</p>
-                  <label className="field">
-                    <span className="field-label">New Password</span>
-                    <input className="input" type="password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
-                  </label>
-                  <label className="field">
-                    <span className="field-label">Confirm New Password</span>
-                    <input className="input" type="password" minLength={12} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
-                  </label>
-                  <button className="btn btn-primary settings-password-button" type="submit" disabled={changingPassword}>
-                    {changingPassword ? "Changing..." : "Set new password"}
+              <label className="field">
+                <span className="field-label">Current Password</span>
+                <div className="settings-password-wrap">
+                  <input className="input" type={showCurrentPassword ? "text" : "password"} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+                  <button className="settings-password-toggle" type="button" onClick={() => setShowCurrentPassword((visible) => !visible)} aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}>
+                    {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
-                </>
-              )}
+                </div>
+              </label>
+              <label className="field">
+                <span className="field-label">New Password</span>
+                <div className="settings-password-wrap">
+                  <input className="input" type={showNewPassword ? "text" : "password"} minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
+                  <button className="settings-password-toggle" type="button" onClick={() => setShowNewPassword((visible) => !visible)} aria-label={showNewPassword ? "Hide new password" : "Show new password"}>
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+              <label className="field">
+                <span className="field-label">Confirm New Password</span>
+                <div className="settings-password-wrap">
+                  <input className="input" type={showConfirmPassword ? "text" : "password"} minLength={12} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
+                  <button className="settings-password-toggle" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? "Hide confirmed password" : "Show confirmed password"}>
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+              <button className="btn btn-primary settings-password-button" type="submit" disabled={changingPassword}>
+                {changingPassword ? "Changing..." : "Change password"}
+              </button>
             </form>
             <div className="card settings-account-card">
               <div>

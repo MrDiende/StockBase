@@ -566,6 +566,25 @@
   cursor: pointer;
 }
 
+.auth-forgot-password {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--brand-600);
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.auth-forgot-password:hover {
+  color: var(--brand-700);
+  text-decoration: underline;
+}
+
 .auth-footer {
   margin: 48px 0 0;
   color: var(--gray-400);

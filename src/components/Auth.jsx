@@ -12,6 +12,20 @@ export function Auth({ supabase }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const requestPasswordReset = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+    const normalizedEmail = email.trim().toLowerCase();
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: window.location.origin,
+    });
+    setBusy(false);
+    setMessage(error
+      ? error.message
+      : "If an account exists for this email, a password reset link has been sent.");
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     if (mode === "sign-up" && !strongPasswordPattern.test(password)) {
@@ -27,7 +41,11 @@ export function Auth({ supabase }) {
     const normalizedEmail = email.trim().toLowerCase();
     const result = mode === "sign-in"
       ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
-      : await supabase.auth.signUp({ email: normalizedEmail, password });
+      : await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
     setBusy(false);
     if (result.error) {
       const duplicateEmail = mode === "sign-up" && (
@@ -73,16 +91,16 @@ export function Auth({ supabase }) {
               <span>StockBase</span>
             </div>
             <div className="auth-heading">
-              <span className="auth-form-kicker">{mode === "sign-in" ? "WELCOME BACK" : "GET STARTED"}</span>
-              <h2>{mode === "sign-in" ? "Sign in to your account" : "Create your account"}</h2>
-              <p>{mode === "sign-in" ? "Enter your details to continue." : "Start managing your inventory today."}</p>
+              <span className="auth-form-kicker">{mode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
+              <h2>{mode === "sign-up" ? "Create your account" : mode === "forgot-password" ? "Reset your password" : "Sign in to your account"}</h2>
+              <p>{mode === "sign-up" ? "Start managing your inventory today." : mode === "forgot-password" ? "Enter your email to receive a reset link." : "Enter your details to continue."}</p>
             </div>
-            <form className="auth-form" onSubmit={submit}>
+            <form className="auth-form" onSubmit={mode === "forgot-password" ? requestPasswordReset : submit}>
               <div className="auth-field">
                 <label htmlFor="auth-email">Email address</label>
                 <input id="auth-email" className="auth-input" type="email" placeholder="you@company.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
               </div>
-              <div className="auth-field">
+              {mode !== "forgot-password" && <div className="auth-field">
                 <div className="auth-label-row">
                   <label htmlFor="auth-password">Password</label>
                   {mode === "sign-in" ? (
@@ -90,14 +108,14 @@ export function Auth({ supabase }) {
                   ) : (
                     <span className="auth-hint">12+ chars · A-Z · a-z · 0-9 · ! @ # $ %</span>
                   )}
-                </div>
+                  </div>
                 <div className="auth-password-wrap">
                   <input id="auth-password" className="auth-input" type={showPassword ? "text" : "password"} placeholder="Enter your password" minLength={mode === "sign-up" ? 12 : undefined} value={password} onChange={(event) => setPassword(event.target.value)} required />
                   <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              </div>
+              </div>}
               {mode === "sign-up" && (
                 <div className="auth-field">
                   <label htmlFor="auth-confirm-password">Confirm password</label>
@@ -111,15 +129,20 @@ export function Auth({ supabase }) {
               )}
               {message && <p className="auth-message">{message}</p>}
               <button className="auth-submit" disabled={busy}>
-                {busy ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Create account"}
+                {busy ? "Please wait..." : mode === "sign-up" ? "Create account" : mode === "forgot-password" ? "Send reset link" : "Sign in"}
               </button>
             </form>
             <p className="auth-switch-text">
-              {mode === "sign-in" ? "New to StockBase?" : "Already have an account?"}
-              <button onClick={() => { setMode(mode === "sign-in" ? "sign-up" : "sign-in"); setMessage(""); }}>
-                {mode === "sign-in" ? "Create an account" : "Sign in"}
+              {mode === "forgot-password" ? "Remember your password?" : mode === "sign-in" ? "New to StockBase?" : "Already have an account?"}
+              <button type="button" onClick={() => { setMode(mode === "forgot-password" ? "sign-in" : mode === "sign-in" ? "sign-up" : "sign-in"); setMessage(""); }}>
+                {mode === "forgot-password" ? "Sign in" : mode === "sign-in" ? "Create an account" : "Sign in"}
               </button>
             </p>
+            {mode === "sign-in" && (
+              <button className="auth-forgot-password" type="button" onClick={() => { setMode("forgot-password"); setMessage(""); }}>
+                Forgot password?
+              </button>
+            )}
           </div>
           <p className="auth-footer">© 2026 StockBase · Built for better inventory decisions</p>
         </div>

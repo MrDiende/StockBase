@@ -198,6 +198,32 @@
   align-self: flex-start;
 }
 
+.settings-password-wrap {
+  position: relative;
+}
+
+.settings-password-wrap .input {
+  padding-right: 42px;
+}
+
+.settings-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.settings-password-toggle:hover {
+  color: var(--gray-700);
+}
+
 .settings-recovery-note {
   margin: -4px 0 0;
   font-size: 14px;
