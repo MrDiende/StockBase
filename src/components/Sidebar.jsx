@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import { cn } from "../utils/cn";
-import { supabase } from "../lib/supabase";
 
 // The four main navigation destinations.
 const navItems = [
@@ -8,9 +7,10 @@ const navItems = [
   { id: "products", label: "Products" },
   { id: "categories", label: "Categories" },
   { id: "transactions", label: "Transactions" },
+  { id: "settings", label: "Settings" },
 ];
 
-export function Sidebar({ page, onNavigate, open, onClose, user }) {
+export function Sidebar({ page, onNavigate, open, onClose }) {
   return (
     <>
       {/* Dark overlay shown behind the sidebar on mobile */}
@@ -45,15 +45,6 @@ export function Sidebar({ page, onNavigate, open, onClose, user }) {
             </button>
           ))}
         </nav>
-        {user && (
-          <div className="sidebar-account">
-            <p className="sidebar-account-email">{user.email}</p>
-            <button className="sidebar-signout" onClick={() => supabase.auth.signOut()} type="button">
-              <span aria-hidden="true">↪</span>
-              Sign out
-            </button>
-          </div>
-        )}
       </aside>
     </>
   );

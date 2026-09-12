@@ -154,7 +154,15 @@ export function useInventory(user) {
       const failure = categoriesResult.error || productsResult.error || transactionsResult.error;
       if (failure) {
         console.error("Could not load inventory from Supabase.", failure);
-        if (active) setError(`Supabase connection error: ${failure.message}`);
+        if (active) {
+          const isJwtError = failure.message.toLowerCase().includes("jwt");
+          setError(isJwtError
+            ? "Your Supabase session is invalid. Signing in again..."
+            : `Supabase connection error: ${failure.message}`);
+          if (isJwtError) {
+            await supabase.auth.signOut({ scope: "local" });
+          }
+        }
       } else if (active) {
         setState(normalizeState({
           categories: categoriesResult.data.map(toCategory),

@@ -5,6 +5,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { Products } from "./pages/Products";
 import { Categories } from "./pages/Categories";
 import { Transactions } from "./pages/Transactions";
+import { Settings } from "./pages/Settings";
 import { useInventory } from "./hooks/useInventory";
 import { useShopeeSync } from "./hooks/useShopeeSync";
 import { Auth } from "./components/Auth";
@@ -14,6 +15,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [authLoading, setAuthLoading] = useState(Boolean(supabase));
   const inventory = useInventory(user);
   const shopeeSync = useShopeeSync();
@@ -34,8 +36,11 @@ export default function App() {
         setAuthLoading(false);
       }
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setPage("dashboard");
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setPage("settings");
+        setPasswordRecovery(true);
+      }
       setUser(session?.user ?? null);
     });
     return () => {
@@ -45,6 +50,26 @@ export default function App() {
   }, []);
 
   if (authLoading) return <div className="app-status app-status-loading">Loading...</div>;
+  if (!supabase) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card card">
+          <div className="auth-mobile-brand">
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+            <span>StockBase</span>
+          </div>
+          <h1>Supabase connection required</h1>
+          <p className="auth-subtitle">
+            This deployment is missing its Supabase environment configuration.
+            Add the required variables in Vercel and redeploy.
+          </p>
+          <p className="auth-message">
+            Required: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
+          </p>
+        </section>
+      </main>
+    );
+  }
   if (supabase && !user) return <Auth supabase={supabase} />;
 
   return (
@@ -55,7 +80,7 @@ export default function App() {
           {inventory.error} (click to dismiss)
         </button>
       )}
-      <Sidebar page={page} onNavigate={setPage} open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} />
+      <Sidebar page={page} onNavigate={setPage} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="app-main-column">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
@@ -67,6 +92,14 @@ export default function App() {
           {page === "products" && <Products inventory={inventory} shopeeSync={shopeeSync} />}
           {page === "categories" && <Categories inventory={inventory} />}
           {page === "transactions" && <Transactions inventory={inventory} />}
+          {page === "settings" && (
+            <Settings
+              supabase={supabase}
+              user={user}
+              passwordRecovery={passwordRecovery}
+              onRecoveryComplete={() => setPasswordRecovery(false)}
+            />
+          )}
         </main>
       </div>
     </div>

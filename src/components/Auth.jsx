@@ -24,12 +24,26 @@ export function Auth({ supabase }) {
     }
     setBusy(true);
     setMessage("");
+    const normalizedEmail = email.trim().toLowerCase();
     const result = mode === "sign-in"
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
+      ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
+      : await supabase.auth.signUp({ email: normalizedEmail, password });
     setBusy(false);
     if (result.error) {
-      setMessage(result.error.message);
+      const duplicateEmail = mode === "sign-up" && (
+        result.error.code === "user_already_exists"
+        || result.error.message.toLowerCase().includes("already registered")
+        || result.error.message.toLowerCase().includes("already exists")
+      );
+      if (duplicateEmail) {
+        setMessage("An account with this email already exists. Sign in instead.");
+        setMode("sign-in");
+      } else {
+        setMessage(result.error.message);
+      }
+    } else if (mode === "sign-up" && result.data.user?.identities?.length === 0) {
+      setMessage("An account with this email already exists. Sign in instead.");
+      setMode("sign-in");
     } else if (mode === "sign-up") {
       setMessage("Account created. Check your email to confirm your account, then sign in.");
       setMode("sign-in");

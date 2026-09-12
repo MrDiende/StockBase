@@ -31,9 +31,18 @@ create table if not exists public.transactions (
   note text not null default ''
 );
 
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  full_name text not null default '',
+  address text not null default '',
+  contact_number text not null default '',
+  updated_at timestamptz not null default now()
+);
+
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.transactions enable row level security;
+alter table public.profiles enable row level security;
 
 drop policy if exists "Public inventory access" on public.categories;
 drop policy if exists "Public product access" on public.products;
@@ -41,12 +50,15 @@ drop policy if exists "Public transaction access" on public.transactions;
 drop policy if exists "Users manage own categories" on public.categories;
 drop policy if exists "Users manage own products" on public.products;
 drop policy if exists "Users manage own transactions" on public.transactions;
+drop policy if exists "Users manage own profile" on public.profiles;
 
 create policy "Users manage own categories" on public.categories
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users manage own products" on public.products
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users manage own transactions" on public.transactions
+  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Users manage own profile" on public.profiles
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create unique index if not exists products_name_unique
