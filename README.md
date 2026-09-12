@@ -13,6 +13,9 @@ user accounts, and a simulated Shopee synchronization workflow.
 - Physical-store stock tracking.
 - Manual Shopee synchronization.
 - Account creation, sign-in, and sign-out.
+- Settings page with editable full name, address, and contact number.
+- Profile information stored per user in Supabase with row-level security.
+- Password reset emails through Supabase Authentication.
 - Live inventory updates across open sessions.
 
 ## Built with
@@ -29,7 +32,7 @@ StockBase uses [Supabase](https://supabase.com/) as its backend service.
 Supabase provides:
 
 - Email and password authentication.
-- PostgreSQL database tables for products, categories, and transactions.
+- PostgreSQL database tables for profiles, products, categories, and transactions.
 - Row-level security so each account can access only its own inventory.
 - Realtime updates when inventory data changes.
 - Secure client access through Supabase's publishable frontend connection.
@@ -37,6 +40,43 @@ Supabase provides:
 The frontend communicates with Supabase through the client in
 `src/lib/supabase.js`. Inventory operations are handled through
 `src/hooks/useInventory.js`.
+
+### Supabase setup
+
+Run the complete contents of `supabase/schema.sql` in the Supabase SQL Editor
+when setting up the project or after schema changes. This creates the inventory
+tables, the `profiles` table, indexes, realtime configuration, and
+row-level-security policies.
+
+The `profiles` table stores:
+
+- `full_name`
+- `address`
+- `contact_number`
+
+Each profile is keyed by the authenticated user's ID and can only be read or
+updated by that user.
+
+### Password reset
+
+Password changes use Supabase's password-reset email flow:
+
+1. Open **Settings** in StockBase.
+2. Click **Send reset link**.
+3. Open the reset email and click **Reset password**.
+4. Enter and confirm the new password in StockBase.
+
+Add the local and production application URLs under
+**Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**:
+
+```text
+http://localhost:5173
+https://stock-base-mauve.vercel.app
+```
+
+The **Reset password** email template is managed under
+**Authentication → Emails → Reset password**. Configure custom SMTP if you
+need to edit the default template or send mail through your own provider.
 
 ## Run locally
 
@@ -91,6 +131,16 @@ Install command: npm install
 
 After changing project settings, create a new deployment so the latest build is
 used.
+
+Set these environment variables in the Vercel project before deploying:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+```
+
+Use the Supabase project URL and publishable key only. Never expose a
+`service_role` key or JWT signing secret in frontend environment variables.
 
 ## Deploy with GitHub Pages
 
