@@ -145,7 +145,7 @@ export function useInventory(user) {
     }
 
     let active = true;
-    async function loadRemoteState() {
+    async function loadRemoteState(allowSessionRefresh = true) {
       const [categoriesResult, productsResult, transactionsResult] = await Promise.all([
         supabase.from("categories").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("products").select("*").eq("user_id", user.id).order("created_at"),
@@ -157,10 +157,18 @@ export function useInventory(user) {
         if (active) {
           const isJwtError = failure.message.toLowerCase().includes("jwt");
           setError(isJwtError
-            ? "Your Supabase session is invalid. Signing in again..."
+            ? "Your Supabase session needs to be refreshed. Retrying..."
             : `Supabase connection error: ${failure.message}`);
-          if (isJwtError) {
-            await supabase.auth.signOut({ scope: "local" });
+          if (isJwtError && allowSessionRefresh) {
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              console.error("Could not refresh the Supabase session.", refreshError);
+              await supabase.auth.signOut({ scope: "local" });
+            } else if (active) {
+              setError("");
+              await loadRemoteState(false);
+              return;
+            }
           }
         }
       } else if (active) {
