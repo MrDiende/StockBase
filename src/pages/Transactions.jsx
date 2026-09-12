@@ -52,7 +52,7 @@ export function Transactions({ inventory }) {
         </div>
         <div className="card stat-card">
           <p className="stat-label">Total Records</p>
-          <p className="stat-value" style={{ color: "var(--brand-600)" }}>
+          <p className="stat-value stat-value-brand">
             <ArrowRightLeft size={20} /> {transactions.length}
           </p>
         </div>
@@ -80,7 +80,7 @@ export function Transactions({ inventory }) {
       {/* Table */}
       <div className="table-wrapper">
         <div className="table-scroll">
-          <table className="data-table" style={{ minWidth: 700 }}>
+          <table className="data-table transactions-table">
             <thead>
               <tr>
                 <th>Product</th>
@@ -98,9 +98,9 @@ export function Transactions({ inventory }) {
                     <td>
                       <div className="product-cell">
                         {product ? (
-                          <img src={product.image} alt={product.name} className="thumb" style={{ height: 32, width: 32 }} />
+                          <img src={product.image} alt={product.name} className="thumb transaction-thumb" />
                         ) : (
-                          <span className="avatar" style={{ height: 32, width: 32 }}>?</span>
+                          <span className="avatar transaction-avatar">?</span>
                         )}
                         <span className="item-name">{product?.name ?? "Deleted product"}</span>
                       </div>
@@ -110,7 +110,7 @@ export function Transactions({ inventory }) {
                       {t.type === "out" && <Badge variant="red">Stock Out</Badge>}
                       {t.type === "adjust" && <Badge variant="sky">Adjustment</Badge>}
                     </td>
-                    <td style={{ fontWeight: 500 }}>
+                    <td className="transaction-quantity">
                       {t.type === "out" ? "-" : t.type === "in" ? "+" : ""}
                       {t.quantity}
                     </td>

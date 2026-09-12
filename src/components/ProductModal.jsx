@@ -99,11 +99,11 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
       reorderLevel,
       image: form.image || generatePlaceholderImage(form.name.trim()),
       warehouseId: form.warehouseId,
-      syncedToShopee: form.syncToShopee,
+      // New physical-store stock stays local until the user explicitly syncs it.
+      syncedToShopee: initial ? form.syncToShopee : false,
+      syncToShopee: form.syncToShopee,
     });
 
-    // New products marked "sync" kick off a Shopee sync right away.
-    if (form.syncToShopee && !initial) shopeeSync.sync();
   };
 
   const previewImage = form.image || generatePlaceholderImage(form.name.trim() || "New Product");
@@ -139,7 +139,7 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
                   </button>
                 )}
               </div>
-              <p className="field-hint" style={{ fontSize: 12 }}>
+              <p className="field-hint field-hint-small">
                 PNG or JPG. A placeholder is used if none is set.
               </p>
             </div>

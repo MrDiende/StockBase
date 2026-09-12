@@ -70,8 +70,13 @@ export function Products({ inventory, shopeeSync }) {
   };
 
   const handleSave = (data) => {
-    if (editing) updateProduct(editing.id, data);
-    else addProduct(data);
+    if (editing) {
+      updateProduct(editing.id, data);
+    } else {
+      const { syncToShopee, ...product } = data;
+      const productId = addProduct(product);
+      if (productId && syncToShopee) handleSyncProduct(productId);
+    }
     setModalOpen(false);
   };
 
@@ -127,7 +132,7 @@ export function Products({ inventory, shopeeSync }) {
       {/* Products table */}
       <div className="table-wrapper">
         <div className="table-scroll">
-          <table className="data-table" style={{ minWidth: 900 }}>
+          <table className="data-table products-table">
             <thead>
               <tr>
                 <th>
@@ -153,7 +158,7 @@ export function Products({ inventory, shopeeSync }) {
                   </button>
                 </th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -174,7 +179,7 @@ export function Products({ inventory, shopeeSync }) {
                     <td>
                       {category && (
                         <Badge>
-                          <span className="badge-dot" style={{ backgroundColor: category.color }} />
+                          <span className={`badge-dot category-dot-${category.color.slice(1)}`} />
                           {category.name}
                         </Badge>
                       )}
@@ -203,7 +208,7 @@ export function Products({ inventory, shopeeSync }) {
                     <td>{peso(p.price * p.quantity)}</td>
                     <td>
                       {status === "out" && <Badge variant="red">Out of stock</Badge>}
-                      {status === "low" && <Badge variant="amber">Low stock</Badge>}
+                      {status === "low" && <Badge variant="red">Low stock</Badge>}
                       {status === "ok" && <Badge variant="green">In stock</Badge>}
                     </td>
                     <td>

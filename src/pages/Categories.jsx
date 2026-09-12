@@ -71,7 +71,7 @@ export function Categories({ inventory }) {
               </div>
               <div className="entity-footer">
                 <span className="muted">Total stocks</span>
-                <span style={{ fontWeight: 600, color: "var(--gray-700)" }}>{countStocks(c.id)}</span>
+                <span className="entity-total">{countStocks(c.id)}</span>
               </div>
             </div>
           ))}

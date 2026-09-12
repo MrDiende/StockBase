@@ -313,6 +313,61 @@
   background-color: var(--red-500);
 }
 
+.progress-fill-0 { width: 0%; }
+.progress-fill-10 { width: 10%; }
+.progress-fill-20 { width: 20%; }
+.progress-fill-30 { width: 30%; }
+.progress-fill-40 { width: 40%; }
+.progress-fill-50 { width: 50%; }
+.progress-fill-60 { width: 60%; }
+.progress-fill-70 { width: 70%; }
+.progress-fill-80 { width: 80%; }
+.progress-fill-90 { width: 90%; }
+.progress-fill-100 { width: 100%; }
+
+.entity-total {
+  color: var(--gray-700);
+  font-weight: 600;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.products-table {
+  min-width: 900px;
+}
+
+.transactions-table {
+  min-width: 700px;
+}
+
+.stat-value-brand {
+  color: var(--brand-600);
+}
+
+.transaction-thumb,
+.transaction-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.transaction-quantity {
+  font-weight: 500;
+}
+
+.field-hint-small {
+  font-size: 12px;
+}
+
+.sync-status-dot-active {
+  background-color: var(--amber-400);
+}
+
+.sync-status-dot-ready {
+  background-color: var(--green-500);
+}
+
 .chart-card {
   margin-top: 0;
 }
@@ -378,6 +433,10 @@
   border: 1px solid var(--gray-100);
   border-radius: var(--radius-md);
   padding: 10px 12px;
+}
+
+.stat-card .stat-trend-danger {
+  color: var(--red-600);
 }
 
 .row-left {

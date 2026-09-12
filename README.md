@@ -1,92 +1,140 @@
 # StockBase
 
-A simple, frontend-only **inventory management** app built with React, Vite and
-Tailwind CSS. It lets you manage products, categories and stock movements, with a
-Shopee-inspired design, a simulated "Sync to Shopee" feature and a physical-store
-capacity overview. All data is stored locally in your browser (`localStorage`).
+StockBase is an inventory management app for products, categories, and stock
+movements. It includes a Shopee-inspired interface, physical-store tracking,
+user accounts, and a simulated Shopee synchronization workflow.
 
 ## Features
 
-- **Dashboard** – key stats, Shopee sync status, physical-store capacity and a
-  "stock by category" chart, plus low-stock and recent-activity lists.
-- **Products** – add / edit / delete products with an image upload, auto-generated
-  SKU, search, filtering and sorting.
-- **Categories** – group products and see totals per category.
-- **Transactions** – full history of stock-in / stock-out / adjustments.
-- **Shopee sync (simulated)** – mark products to sync and keep stock aligned.
+- Dashboard with inventory totals, low-stock alerts, and recent activity.
+- Product creation, editing, searching, sorting, images, and SKU generation.
+- Category management.
+- Stock-in, stock-out, and adjustment transactions.
+- Physical-store stock tracking.
+- Manual Shopee synchronization.
+- Account creation, sign-in, and sign-out.
+- Live inventory updates across open sessions.
 
-## Tech stack
+## Built with
 
 - [React 19](https://react.dev/)
 - [Vite](https://vite.dev/)
-- [Tailwind CSS](https://tailwindcss.com/) + custom CSS design system (`src/styles/`)
-- [Recharts](https://recharts.org/) for the dashboard chart
-- [lucide-react](https://lucide.dev/) for icons
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Recharts](https://recharts.org/)
+- [lucide-react](https://lucide.dev/)
 
-## Getting started
+## Backend and database
 
-You need [Node.js](https://nodejs.org/) (version 18 or newer) installed. Then open
-the project folder in VS Code and use the built-in terminal.
+StockBase uses [Supabase](https://supabase.com/) as its backend service.
+Supabase provides:
+
+- Email and password authentication.
+- PostgreSQL database tables for products, categories, and transactions.
+- Row-level security so each account can access only its own inventory.
+- Realtime updates when inventory data changes.
+- Secure client access through Supabase's publishable frontend connection.
+
+The frontend communicates with Supabase through the client in
+`src/lib/supabase.js`. Inventory operations are handled through
+`src/hooks/useInventory.js`.
+
+## Run locally
+
+You need [Node.js](https://nodejs.org/) 18 or newer.
+
+Install the project dependencies:
 
 ```bash
-# 1. Install ALL dependencies (run this first — do NOT run "npm install vite")
 npm install
+```
 
-# 2. Start the dev server, then open the http://localhost:5173 link it prints
+Start the development server:
+
+```bash
 npm run dev
+```
 
-# Build for production (outputs to dist/)
+Open the local address printed by Vite, usually:
+
+```text
+http://localhost:5173
+```
+
+## Build the app
+
+Create a production build:
+
+```bash
 npm run build
+```
 
-# Preview the production build locally
+Preview the production build:
+
+```bash
 npm run preview
 ```
 
-### Troubleshooting
+The generated files are placed in `dist/`. This folder is created
+automatically and should not be committed.
 
-**`'vite' is not recognized ...`**
-This means dependencies aren't installed yet. Run `npm install` (the full command,
-not `npm install vite`) in the project folder, then `npm run dev`.
+## Deploy with Vercel
 
-**npm says a package "has install scripts not yet covered" / esbuild errors**
-Newer npm versions can block build scripts. This project ships an `.npmrc` with
-`allow-scripts=true` to fix that automatically. If you still hit it, run:
+Vercel normally detects this Vite project automatically. Use these settings if
+they are requested:
 
-```bash
-npm install --foreground-scripts
+```text
+Framework preset: Vite
+Build command: npm run build
+Output directory: dist
+Install command: npm install
 ```
 
-**Still stuck? Do a clean reinstall (Windows PowerShell):**
+After changing project settings, create a new deployment so the latest build is
+used.
 
-```powershell
-Remove-Item -Recurse -Force node_modules
-Remove-Item package-lock.json
+## Deploy with GitHub Pages
+
+The project includes a deployment script:
+
+```bash
+npm run deploy
+```
+
+This builds the app and publishes the contents of `dist/` to the `gh-pages`
+branch.
+
+## Troubleshooting
+
+### The account page does not appear
+
+An existing session may still be saved in the browser. Sign out using the
+sidebar button, refresh the page, or open the app in a private/incognito window.
+
+### A stale session or token error appears
+
+Sign out and sign in again. If the problem continues, clear the browser site
+data for the application and reload it.
+
+### Vite is not recognized
+
+Install the dependencies again:
+
+```bash
 npm install
 npm run dev
 ```
 
-## Deploying to GitHub Pages
-
-This repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that
-builds the app and publishes it to GitHub Pages automatically.
-
-1. Push the project to a GitHub repository (default branch: `main`).
-2. In the repository, go to **Settings → Pages**.
-3. Under **Build and deployment → Source**, choose **GitHub Actions**.
-4. Every push to `main` will build and deploy the site. The live URL appears in the
-   **Actions** run summary and under **Settings → Pages**.
-
-The Vite config uses `base: "./"`, so the app works whether it's served from a
-project subpath (e.g. `username.github.io/stockbase/`) or a custom domain.
-
 ## Project structure
 
-```
+```text
 src/
-  components/   Reusable UI pieces (Modal, Badge, Sidebar, forms, ...)
-  pages/        Dashboard, Products, Categories, Transactions
-  hooks/        useInventory, useShopeeSync (state + localStorage)
-  data/         Seed data and the physical-store definition
-  utils/        Small helpers (classnames, SKU, placeholder image)
-  styles/       CSS design system (theme, base, layout, components)
+  components/   Shared UI, authentication, forms, and dialogs
+  pages/        Dashboard, Products, Categories, and Transactions
+  hooks/        Inventory state and synchronization
+  lib/          External service client
+  data/         Seed data and warehouse definitions
+  utils/        SKU, placeholder, and class-name helpers
+  styles/       Base, theme, layout, and component styles
+public/
+  logo.png      StockBase logo
 ```

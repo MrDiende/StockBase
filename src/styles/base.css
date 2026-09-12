@@ -246,6 +246,15 @@ body {
   border-radius: var(--radius-full);
 }
 
+.category-dot-EE4D2D { background-color: #ee4d2d; }
+.category-dot-0ea5e9 { background-color: #0ea5e9; }
+.category-dot-f59e0b { background-color: #f59e0b; }
+.category-dot-10b981 { background-color: #10b981; }
+.category-dot-ec4899 { background-color: #ec4899; }
+.category-dot-8b5cf6 { background-color: #8b5cf6; }
+.category-dot-ef4444 { background-color: #ef4444; }
+.category-dot-14b8a6 { background-color: #14b8a6; }
+
 /* ---- Tables ------------------------------------------------------------- */
 
 .table-wrapper {

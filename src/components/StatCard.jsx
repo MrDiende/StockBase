@@ -6,7 +6,7 @@ export function StatCard({ label, value, trend }) {
       <p className="stat-label">{label}</p>
       <p className="stat-value">{value}</p>
       {trend && (
-        <p className={`stat-trend ${trend.positive ? "stat-trend-up" : "stat-trend-down"}`}>
+        <p className={`stat-trend ${trend.danger ? "stat-trend-danger" : trend.positive ? "stat-trend-up" : "stat-trend-down"}`}>
           {trend.value}
         </p>
       )}

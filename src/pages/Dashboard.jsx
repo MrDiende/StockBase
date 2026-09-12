@@ -42,6 +42,9 @@ export function Dashboard({ inventory, onNavigate, shopeeSync }) {
   // Headline numbers.
   const totalStockValue = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
   const totalStocks = products.reduce((sum, p) => sum + p.quantity, 0);
+  const syncedStocks = products
+    .filter((p) => p.syncedToShopee)
+    .reduce((sum, p) => sum + p.quantity, 0);
   const lowStock = products.filter((p) => p.quantity <= p.reorderLevel);
   const outOfStock = products.filter((p) => p.quantity === 0);
 
@@ -78,6 +81,7 @@ export function Dashboard({ inventory, onNavigate, shopeeSync }) {
           trend={{
             value: lowStock.length ? "Needs reordering soon" : "All stock levels healthy",
             positive: lowStock.length === 0,
+            danger: lowStock.length > 0,
           }}
         />
         <StatCard
@@ -95,10 +99,10 @@ export function Dashboard({ inventory, onNavigate, shopeeSync }) {
         <div className="card stat-card">
           <p className="stat-label">Shopee Sync</p>
           <p className="stat-value">
-            {totalStocks.toLocaleString()} <span className="stat-value-unit">stocks</span>
+            {syncedStocks.toLocaleString()} <span className="stat-value-unit">stocks</span>
           </p>
           <p className="stat-status">
-            <span className="badge-dot" style={{ backgroundColor: syncing ? "var(--amber-400)" : "var(--green-500)" }} />
+            <span className={`badge-dot sync-status-dot ${syncing ? "sync-status-dot-active" : "sync-status-dot-ready"}`} />
             {syncing ? "Syncing stock with Shopee..." : `Stock synced · ${formatSyncedAt(lastSyncedAt)}`}
           </p>
         </div>
@@ -106,14 +110,8 @@ export function Dashboard({ inventory, onNavigate, shopeeSync }) {
         <div className="card stat-card">
           <p className="stat-label">Physical Store</p>
           <p className="stat-value">
-            {warehouse.utilization}% <span className="stat-value-unit">full</span>
+            {warehouse.stockUnits.toLocaleString()} <span className="stat-value-unit">stocks</span>
           </p>
-          <p className="stat-status">
-            {warehouse.name} · {warehouse.stockUnits}/{warehouse.capacity} stocks
-          </p>
-          <div className="progress-track">
-            <div className={fillClass(warehouse.utilization)} style={{ width: `${warehouse.utilization}%` }} />
-          </div>
         </div>
       </div>
 
