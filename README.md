@@ -78,6 +78,32 @@ The **Reset password** email template is managed under
 **Authentication → Emails → Reset password**. Configure custom SMTP if you
 need to edit the default template or send mail through your own provider.
 
+#### Brevo SMTP configuration
+
+Brevo can be used as the custom SMTP provider for Supabase authentication
+emails:
+
+1. Create or sign in to a [Brevo](https://www.brevo.com/) account.
+2. Verify the sender email under **Settings → Senders, domains, IPs**.
+3. Open **Settings → SMTP & API**.
+4. Generate an SMTP key and copy it when it is displayed.
+5. In Supabase, open **Authentication → Emails → SMTP Settings** and enable
+   custom SMTP.
+6. Enter the following values:
+
+```text
+Host: smtp-relay.brevo.com
+Port: 587
+Username: the Login value shown in Brevo under Your SMTP Settings
+Password: the generated Brevo SMTP key
+Sender email: the verified Brevo sender email
+Sender name: StockBase
+```
+
+Save the Supabase SMTP settings before testing account confirmation or password
+reset emails. Keep the SMTP key private: never add it to frontend code,
+`.env.local`, Vercel environment variables, or GitHub.
+
 ## Run locally
 
 You need [Node.js](https://nodejs.org/) 18 or newer.
