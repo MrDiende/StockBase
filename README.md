@@ -18,13 +18,19 @@ user accounts, and a simulated Shopee synchronization workflow.
 - Password reset emails through Supabase Authentication.
 - Live inventory updates across open sessions.
 
-## Built with
+## Tech Stack
 
-- [React 19](https://react.dev/)
-- [Vite](https://vite.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Recharts](https://recharts.org/)
-- [lucide-react](https://lucide.dev/)
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19 |
+| Build tool | Vite |
+| Styling | Tailwind CSS 4 |
+| Icons | Lucide React |
+| Charts | Recharts |
+| Authentication | Supabase Auth |
+| Database | Supabase PostgreSQL |
+| Realtime | Supabase Realtime |
+| Hosting | Vercel or GitHub Pages |
 
 ## Backend and database
 
@@ -207,17 +213,53 @@ npm install
 npm run dev
 ```
 
-## Project structure
+## Project Structure
 
 ```text
-src/
-  components/   Shared UI, authentication, forms, and dialogs
-  pages/        Dashboard, Products, Categories, and Transactions
-  hooks/        Inventory state and synchronization
-  lib/          External service client
-  data/         Seed data and warehouse definitions
-  utils/        SKU, placeholder, and class-name helpers
-  styles/       Base, theme, layout, and component styles
-public/
-  logo.png      StockBase logo
+StockBase/
+├── public/
+│   └── logo.png
+├── src/
+│   ├── components/
+│   │   ├── Auth.jsx
+│   │   ├── Badge.jsx
+│   │   ├── CategoryModal.jsx
+│   │   ├── ConfirmDialog.jsx
+│   │   ├── Modal.jsx
+│   │   ├── ProductModal.jsx
+│   │   ├── Sidebar.jsx
+│   │   ├── StatCard.jsx
+│   │   ├── StockModal.jsx
+│   │   └── Topbar.jsx
+│   ├── data/
+│   │   ├── seed.js
+│   │   └── warehouses.js
+│   ├── hooks/
+│   │   ├── useInventory.js
+│   │   └── useShopeeSync.js
+│   ├── lib/
+│   │   └── supabase.js
+│   ├── pages/
+│   │   ├── Categories.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Products.jsx
+│   │   ├── Settings.jsx
+│   │   └── Transactions.jsx
+│   ├── styles/
+│   │   ├── base.css
+│   │   ├── components.css
+│   │   ├── layout.css
+│   │   └── theme.css
+│   ├── utils/
+│   │   ├── classNames.js
+│   │   ├── placeholderImage.js
+│   │   └── skuGenerator.js
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── supabase/
+│   └── schema.sql
+├── index.html
+├── package.json
+└── vite.config.js
 ```
