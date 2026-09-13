@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, RefreshCw, X } from "lucide-react";
 import { Modal } from "./Modal";
-import { generatePlaceholderImage } from "../utils/placeholder";
-import { generateSku } from "../utils/sku";
+import { generatePlaceholderImage } from "../utils/placeholderImage";
+import { generateSku } from "../utils/skuGenerator";
 import { warehouses } from "../data/warehouses";
 
 // Blank form used when adding a new product.

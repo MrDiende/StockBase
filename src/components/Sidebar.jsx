@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { cn } from "../utils/cn";
+import { cn } from "../utils/classNames";
 
 // The four main navigation destinations.
 const navItems = [

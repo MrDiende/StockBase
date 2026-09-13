@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal } from "./Modal";
-import { cn } from "../utils/cn";
+import { cn } from "../utils/classNames";
 
 // The three ways to change stock.
 const stockActions = [

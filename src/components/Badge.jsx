@@ -1,4 +1,4 @@
-import { cn } from "../utils/cn";
+import { cn } from "../utils/classNames";
 
 // A small colored pill. `variant` picks the color scheme:
 // "neutral" | "green" | "amber" | "red" | "sky".

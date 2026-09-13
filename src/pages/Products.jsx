@@ -5,7 +5,7 @@ import { ProductModal } from "../components/ProductModal";
 import { StockModal } from "../components/StockModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { warehouses } from "../data/warehouses";
-import { cn } from "../utils/cn";
+import { cn } from "../utils/classNames";
 
 const peso = (n) => n.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
 
