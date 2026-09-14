@@ -3,7 +3,6 @@ import { ImagePlus, RefreshCw, X } from "lucide-react";
 import { Modal } from "./Modal";
 import { generatePlaceholderImage } from "../utils/placeholderImage";
 import { generateSku } from "../utils/skuGenerator";
-import { warehouses } from "../data/warehouses";
 
 // Blank form used when adding a new product.
 const emptyForm = {
@@ -14,7 +13,7 @@ const emptyForm = {
   quantity: "",
   reorderLevel: "",
   image: "",
-  warehouseId: "",
+  physicalStore: true,
   syncToShopee: false,
 };
 
@@ -36,28 +35,27 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
         quantity: String(initial.quantity),
         reorderLevel: String(initial.reorderLevel),
         image: initial.image,
-        warehouseId: initial.warehouseId,
+        physicalStore: initial.physicalStore,
         syncToShopee: initial.syncedToShopee,
       });
     } else {
       setForm({
         ...emptyForm,
         categoryId: categories[0]?.id ?? "",
-        warehouseId: warehouses[0]?.id ?? "",
+        physicalStore: true,
       });
     }
     setError("");
   }, [open, initial, categories]);
 
-  // Auto-generate the SKU from the category when creating a new product.
+  // Keep a new product's SKU synchronized with its category and current products.
   useEffect(() => {
     if (!open || initial || !form.categoryId) return;
     const category = categories.find((c) => c.id === form.categoryId);
     if (!category) return;
     const nextSku = generateSku(category.name, products.map((p) => p.sku));
     setForm((f) => (f.sku === nextSku ? f : { ...f, sku: nextSku }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.categoryId, open, initial]);
+  }, [categories, form.categoryId, initial, open, products]);
 
   // Helper that returns an onChange handler for a text/select field.
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -80,8 +78,6 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
 
     if (!form.name.trim()) return setError("Product name is required.");
     if (!form.categoryId) return setError("Please select a category.");
-    if (!form.warehouseId) return setError("Please select a physical store.");
-
     const price = Number(form.price);
     const quantity = Number(form.quantity);
     const reorderLevel = Number(form.reorderLevel);
@@ -89,16 +85,20 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
     if ([price, quantity, reorderLevel].some((n) => Number.isNaN(n) || n < 0)) {
       return setError("Numeric fields must be valid, non-negative numbers.");
     }
+    const category = categories.find((item) => item.id === form.categoryId);
+    const sku = initial || !category
+      ? form.sku.trim().toUpperCase()
+      : generateSku(category.name, products.map((product) => product.sku));
 
     onSave({
       name: form.name.trim(),
-      sku: form.sku.trim().toUpperCase(),
+      sku,
       categoryId: form.categoryId,
       price,
       quantity,
       reorderLevel,
       image: form.image || generatePlaceholderImage(form.name.trim()),
-      warehouseId: form.warehouseId,
+      physicalStore: true,
       // New physical-store stock stays local until the user explicitly syncs it.
       syncedToShopee: initial ? form.syncToShopee : false,
       syncToShopee: form.syncToShopee,
@@ -200,13 +200,7 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
 
           <div className="field">
             <label className="field-label">Physical Store</label>
-            <select className="select" value={form.warehouseId} onChange={set("warehouseId")}>
-              {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+            <p className="field-hint">Automatically enabled for every product.</p>
           </div>
 
           <label className="sync-row">

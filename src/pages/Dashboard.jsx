@@ -2,7 +2,7 @@ import { Layers, TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { StatCard } from "../components/StatCard";
 import { Badge } from "../components/Badge";
-import { warehouses, warehouseForProduct } from "../data/warehouses";
+import { warehouses, warehouseForProduct } from "../data/Physical Store.js";
 
 // Format a number as Philippine Peso.
 const peso = (n) =>

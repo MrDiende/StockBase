@@ -4,7 +4,6 @@ import { Badge } from "../components/Badge";
 import { ProductModal } from "../components/ProductModal";
 import { StockModal } from "../components/StockModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { warehouses } from "../data/warehouses";
 import { cn } from "../utils/classNames";
 
 const peso = (n) => n.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
@@ -14,8 +13,6 @@ export function Products({ inventory, shopeeSync }) {
 
   // Lookups so we can show category / warehouse names quickly.
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
-  const warehouseById = useMemo(() => new Map(warehouses.map((w) => [w.id, w])), []);
-
   // Filter + sort controls.
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -187,7 +184,7 @@ export function Products({ inventory, shopeeSync }) {
                     <td>
                       <div className="fulfillment-cell">
                         <span className="fulfillment-store">
-                          {warehouseById.get(p.warehouseId)?.name ?? "Unassigned"}
+                          {p.physicalStore ? "Physical Store" : "Not in Physical Store"}
                         </span>
                         <button
                           className={cn("sync-pill", p.syncedToShopee ? "sync-pill-on" : "sync-pill-off")}

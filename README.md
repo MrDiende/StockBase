@@ -2,17 +2,18 @@
 
 StockBase is an inventory management app for products, categories, and stock
 movements. It includes a Shopee-inspired interface, physical-store tracking,
-user accounts, and a simulated Shopee synchronization workflow.
+admin authentication, and a simulated Shopee synchronization workflow.
 
 ## Features
 
 - Dashboard with inventory totals, low-stock alerts, and recent activity.
 - Product creation, editing, searching, sorting, images, and SKU generation.
+- SKUs are generated automatically from the selected category and kept unique.
 - Category management.
 - Stock-in, stock-out, and adjustment transactions.
-- Physical-store stock tracking.
-- Manual Shopee synchronization.
-- Account creation, sign-in, and sign-out.
+- Physical-store availability is enabled automatically for every product.
+- Optional Shopee synchronization controlled by the product's Shopee setting.
+- Admin sign-in, password reset, and sign-out.
 - Settings page with editable full name, address, and contact number.
 - Profile information stored per user in Supabase with row-level security.
 - Password reset emails through Supabase Authentication.
@@ -37,9 +38,9 @@ user accounts, and a simulated Shopee synchronization workflow.
 StockBase uses [Supabase](https://supabase.com/) as its backend service.
 Supabase provides:
 
-- Email and password authentication.
+- Email and password authentication for the administrator.
 - PostgreSQL database tables for profiles, products, categories, and transactions.
-- Row-level security so each account can access only its own inventory.
+- Row-level security so the authenticated administrator can access the inventory.
 - Realtime updates when inventory data changes.
 - Secure client access through Supabase's publishable frontend connection.
 
@@ -54,8 +55,9 @@ when setting up the project or after schema changes. This creates the inventory
 tables, the `profiles` table, indexes, realtime configuration, and
 row-level-security policies.
 
-The `profiles` table stores:
+The `profiles` table stores the administrator's:
 
+- `role` (always `admin`)
 - `full_name`
 - `address`
 - `contact_number`
@@ -63,11 +65,22 @@ The `profiles` table stores:
 Each profile is keyed by the authenticated user's ID and can only be read or
 updated by that user.
 
-### Account email and passwords
+The `products` table includes:
 
-New accounts must confirm their email address before signing in. The
-confirmation email redirects to the StockBase application after the user clicks
-the confirmation link.
+- `physical_store` (`boolean`, default `true`) for automatic Physical Store availability.
+- `shopee` (`boolean`, default `false`) for optional Shopee synchronization.
+- `created_at` (`timestamptz`, default `now()`) for the product creation time.
+
+If an older database still has `warehouse_id` or
+`synced_to_shopee`, the schema migration renames those columns and converts
+existing values to the current boolean fields.
+
+### Admin email and password
+
+There is no public account-creation page. Create the administrator account once
+from **Supabase Dashboard → Authentication → Users → Add user**, then use that
+email address to sign in to StockBase. The `profiles` schema defaults every
+profile to the `admin` role.
 
 Users can change their password directly from **Settings** by entering:
 
@@ -97,15 +110,12 @@ need to edit the default template or send mail through your own provider.
 Supabase protects authentication email actions with rate limits. These limits
 can affect:
 
-- Creating accounts and sending confirmation emails.
-- Resending confirmation emails.
+- Sending password-reset emails.
 - Using **Forgot password?** and sending reset emails.
 - Repeated sign-in attempts from the same account or IP address.
 
-Avoid repeatedly clicking signup, resend, or password-reset buttons. Wait for
-the interval in the error message before trying again. A rate-limit response
-does not mean that the account was created more than once; check the user's
-email and the Supabase Authentication logs first.
+Avoid repeatedly clicking password-reset buttons. Wait for the interval in the
+error message before trying again.
 
 Review the limits in **Supabase Dashboard → Authentication → Rate Limits**.
 Custom SMTP can increase email delivery capacity, but Supabase authentication
@@ -113,9 +123,9 @@ rate limits and provider limits still apply. For production use, configure a
 verified sender and a supported SMTP provider rather than relying on the
 default email service.
 
-If testing locally, use separate test accounts and avoid repeated requests toW
-the same address. Never bypass rate limits by exposing service-role keys in the
-frontend.
+If testing locally, use the administrator account and avoid repeated requests
+to the same address. Never bypass rate limits by exposing service-role keys in
+the frontend.
 
 ## Run locally
 
@@ -194,7 +204,7 @@ branch.
 
 ## Troubleshooting
 
-### The account page does not appear
+### The sign-in page does not appear
 
 An existing session may still be saved in the browser. Sign out using the
 sidebar button, refresh the page, or open the app in a private/incognito window.
@@ -233,7 +243,7 @@ StockBase/
 │   │   └── Topbar.jsx
 │   ├── data/
 │   │   ├── seed.js
-│   │   └── warehouses.js
+│   │   └── Physical Store.js
 │   ├── hooks/
 │   │   ├── useInventory.js
 │   │   └── useShopeeSync.js

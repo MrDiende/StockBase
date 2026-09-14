@@ -2,13 +2,10 @@ import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 export function Auth({ supabase }) {
-  const strongPasswordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%]).{12,}$/;
   const [mode, setMode] = useState("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -28,43 +25,13 @@ export function Auth({ supabase }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (mode === "sign-up" && !strongPasswordPattern.test(password)) {
-      setMessage("Password must be at least 12 characters and include uppercase, lowercase, number, and one of ! @ # $ %.");
-      return;
-    }
-    if (mode === "sign-up" && password !== confirmPassword) {
-      setMessage("Passwords do not match.");
-      return;
-    }
     setBusy(true);
     setMessage("");
     const normalizedEmail = email.trim().toLowerCase();
-    const result = mode === "sign-in"
-      ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
-      : await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
+    const result = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
     setBusy(false);
     if (result.error) {
-      const duplicateEmail = mode === "sign-up" && (
-        result.error.code === "user_already_exists"
-        || result.error.message.toLowerCase().includes("already registered")
-        || result.error.message.toLowerCase().includes("already exists")
-      );
-      if (duplicateEmail) {
-        setMessage("An account with this email already exists. Sign in instead.");
-        setMode("sign-in");
-      } else {
-        setMessage(result.error.message);
-      }
-    } else if (mode === "sign-up" && result.data.user?.identities?.length === 0) {
-      setMessage("An account with this email already exists. Sign in instead.");
-      setMode("sign-in");
-    } else if (mode === "sign-up") {
-      setMessage("Account created. Check your email to confirm your account, then sign in.");
-      setMode("sign-in");
+      setMessage(result.error.message);
     }
   };
 
@@ -91,9 +58,9 @@ export function Auth({ supabase }) {
               <span>StockBase</span>
             </div>
             <div className="auth-heading">
-              <span className="auth-form-kicker">{mode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
-              <h2>{mode === "sign-up" ? "Create your account" : mode === "forgot-password" ? "Reset your password" : "Sign in to your account"}</h2>
-              <p>{mode === "sign-up" ? "Start managing your inventory today." : mode === "forgot-password" ? "Enter your email to receive a reset link." : "Enter your details to continue."}</p>
+              <span className="auth-form-kicker">{mode === "forgot-password" ? "ACCOUNT RECOVERY" : "WELCOME ADMIN"}</span>
+              <h2>{mode === "forgot-password" ? "Reset your password" : "Sign in to StockBase"}</h2>
+              <p>{mode === "forgot-password" ? "Enter your email to receive a reset link." : "Enter your admin credentials to continue."}</p>
             </div>
             <form className="auth-form" onSubmit={mode === "forgot-password" ? requestPasswordReset : submit}>
               <div className="auth-field">
@@ -103,41 +70,30 @@ export function Auth({ supabase }) {
               {mode !== "forgot-password" && <div className="auth-field">
                 <div className="auth-label-row">
                   <label htmlFor="auth-password">Password</label>
-                  {mode === "sign-in" ? (
-                    <span className="auth-hint">Your account password</span>
-                  ) : (
-                    <span className="auth-hint">12+ chars · A-Z · a-z · 0-9 · ! @ # $ %</span>
-                  )}
+                  <span className="auth-hint">Your admin password</span>
                   </div>
                 <div className="auth-password-wrap">
-                  <input id="auth-password" className="auth-input" type={showPassword ? "text" : "password"} placeholder="Enter your password" minLength={mode === "sign-up" ? 12 : undefined} value={password} onChange={(event) => setPassword(event.target.value)} required />
+                  <input id="auth-password" className="auth-input" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(event) => setPassword(event.target.value)} required />
                   <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>}
-              {mode === "sign-up" && (
-                <div className="auth-field">
-                  <label htmlFor="auth-confirm-password">Confirm password</label>
-                  <div className="auth-password-wrap">
-                    <input id="auth-confirm-password" className="auth-input" type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter your password" minLength={12} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
-                    <button type="button" className="auth-password-toggle" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-              )}
               {message && <p className="auth-message">{message}</p>}
               <button className="auth-submit" disabled={busy}>
-                {busy ? "Please wait..." : mode === "sign-up" ? "Create account" : mode === "forgot-password" ? "Send reset link" : "Sign in"}
+                {busy ? "Please wait..." : mode === "forgot-password" ? "Send reset link" : "Sign in"}
               </button>
             </form>
-            <p className="auth-switch-text">
-              {mode === "forgot-password" ? "Remember your password?" : mode === "sign-in" ? "New to StockBase?" : "Already have an account?"}
-              <button type="button" onClick={() => { setMode(mode === "forgot-password" ? "sign-in" : mode === "sign-in" ? "sign-up" : "sign-in"); setMessage(""); }}>
-                {mode === "forgot-password" ? "Sign in" : mode === "sign-in" ? "Create an account" : "Sign in"}
-              </button>
-            </p>
+            {mode === "forgot-password" ? (
+              <p className="auth-switch-text">
+                Remember your password?
+                <button type="button" onClick={() => { setMode("sign-in"); setMessage(""); }}>
+                  Sign in
+                </button>
+              </p>
+            ) : (
+              <p className="auth-switch-text">Admin access only</p>
+            )}
             {mode === "sign-in" && (
               <button className="auth-forgot-password" type="button" onClick={() => { setMode("forgot-password"); setMessage(""); }}>
                 Forgot password?

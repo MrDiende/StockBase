@@ -82,8 +82,8 @@ const toProduct = (row) => ({
   quantity: Number(row.quantity),
   reorderLevel: Number(row.reorder_level),
   image: row.image,
-  warehouseId: row.warehouse_id,
-  syncedToShopee: row.synced_to_shopee,
+  physicalStore: row.physical_store,
+  syncedToShopee: row.shopee,
   createdAt: row.created_at,
 });
 
@@ -112,8 +112,8 @@ const productRow = (product, userId) => ({
   quantity: product.quantity,
   reorder_level: product.reorderLevel,
   image: product.image,
-  warehouse_id: product.warehouseId,
-  synced_to_shopee: product.syncedToShopee,
+  physical_store: product.physicalStore,
+  shopee: product.syncedToShopee,
   created_at: product.createdAt,
   user_id: userId,
 });
@@ -252,8 +252,8 @@ export function useInventory(user) {
       if ("quantity" in patch) update.quantity = patch.quantity;
       if ("reorderLevel" in patch) update.reorder_level = patch.reorderLevel;
       if ("image" in patch) update.image = patch.image;
-      if ("warehouseId" in patch) update.warehouse_id = patch.warehouseId;
-      if ("syncedToShopee" in patch) update.synced_to_shopee = patch.syncedToShopee;
+      if ("physicalStore" in patch) update.physical_store = patch.physicalStore;
+      if ("syncedToShopee" in patch) update.shopee = patch.syncedToShopee;
       supabase.from("products").update(update).eq("id", id).eq("user_id", user.id).then(({ error: updateError }) => {
         if (updateError) reportError("Could not update product.", updateError);
       });
