@@ -259,7 +259,7 @@
 /* ---- Authentication ---------------------------------------------------- */
 
 .auth-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: #f8fafc;
   color: var(--gray-900);
   display: grid;
@@ -595,10 +595,11 @@
 @media (max-width: 720px) {
   .auth-page {
     padding: 0;
+    place-items: stretch;
   }
 
   .auth-shell {
-    min-height: 100vh;
+    min-height: 100dvh;
     grid-template-columns: 1fr;
     border: 0;
     border-radius: 0;
@@ -610,11 +611,19 @@
 
   .auth-form-panel {
     justify-content: flex-start;
-    padding: 38px 24px;
+    padding: 32px 20px 24px;
   }
 
   .auth-mobile-brand {
     display: flex;
-    margin-bottom: 72px;
+    margin-bottom: clamp(40px, 12vh, 72px);
+  }
+
+  .auth-heading h2 {
+    font-size: clamp(24px, 7vw, 28px);
+  }
+
+  .auth-footer {
+    margin-top: 36px;
   }
 }

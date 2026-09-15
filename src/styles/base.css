@@ -7,11 +7,19 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   background-color: var(--page-bg);
   color: var(--gray-800);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
 }
 
 /* ---- Layout ------------------------------------------------------------- */
@@ -24,12 +32,14 @@ body {
 .app-main-column {
   display: flex;
   min-height: 100vh;
+  min-width: 0;
   flex: 1;
   flex-direction: column;
 }
 
 .page-content {
   flex: 1;
+  min-width: 0;
   padding: 24px 16px;
 }
 
@@ -258,6 +268,7 @@ body {
 /* ---- Tables ------------------------------------------------------------- */
 
 .table-wrapper {
+  max-width: 100%;
   overflow: hidden;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-xl);
@@ -266,7 +277,9 @@ body {
 }
 
 .table-scroll {
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
