@@ -8,7 +8,7 @@ import { cn } from "../utils/classNames";
 
 const peso = (n) => n.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
 
-export function Products({ inventory, shopeeSync }) {
+export function Products({ inventory, shopeeSync, operationSecurity }) {
   const { products, categories, addProduct, updateProduct, deleteProduct, recordTransaction } = inventory;
 
   // Lookups so we can show category / warehouse names quickly.
@@ -25,6 +25,7 @@ export function Products({ inventory, shopeeSync }) {
   const [editing, setEditing] = useState(null);
   const [stockProduct, setStockProduct] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [authorizationToken, setAuthorizationToken] = useState(null);
 
   const visibleProducts = useMemo(() => {
     const matches = products.filter((p) => {
@@ -54,24 +55,31 @@ export function Products({ inventory, shopeeSync }) {
       setSortKey(key);
       setSortDir(1);
     }
+    setAuthorizationToken(null);
   };
 
-  const openAdd = () => {
+  const openAdd = async () => {
+    const grant = await operationSecurity.authorize("product.add");
+    if (operationSecurity.enabled && !grant) return;
+    setAuthorizationToken(grant);
     setEditing(null);
     setModalOpen(true);
   };
 
-  const openEdit = (p) => {
+  const openEdit = async (p) => {
+    const grant = await operationSecurity.authorize("product.update");
+    if (operationSecurity.enabled && !grant) return;
+    setAuthorizationToken(grant);
     setEditing(p);
     setModalOpen(true);
   };
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editing) {
-      updateProduct(editing.id, data);
+      await updateProduct(editing.id, data, authorizationToken);
     } else {
       const { syncToShopee, ...product } = data;
-      const productId = addProduct(product);
+      const productId = await addProduct(product, authorizationToken);
       if (productId && syncToShopee) handleSyncProduct(productId);
     }
     setModalOpen(false);
@@ -198,7 +206,12 @@ export function Products({ inventory, shopeeSync }) {
                     </td>
                     <td>{peso(p.price)}</td>
                     <td>
-                      <button className="stock-btn" onClick={() => setStockProduct(p)}>
+                      <button className="stock-btn" onClick={async () => {
+                        const grant = await operationSecurity.authorize("transaction.add");
+                        if (operationSecurity.enabled && !grant) return;
+                        setAuthorizationToken(grant);
+                        setStockProduct(p);
+                      }}>
                         {p.quantity} stocks
                       </button>
                     </td>
@@ -213,7 +226,12 @@ export function Products({ inventory, shopeeSync }) {
                         <button className="icon-btn icon-btn-brand" onClick={() => openEdit(p)}>
                           <Pencil size={15} />
                         </button>
-                        <button className="icon-btn icon-btn-danger" onClick={() => setDeletingId(p.id)}>
+                        <button className="icon-btn icon-btn-danger" onClick={async () => {
+                          const grant = await operationSecurity.authorize("product.delete");
+                          if (operationSecurity.enabled && !grant) return;
+                          setAuthorizationToken(grant);
+                          setDeletingId(p.id);
+                        }}>
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -249,7 +267,8 @@ export function Products({ inventory, shopeeSync }) {
         product={stockProduct}
         onClose={() => setStockProduct(null)}
         onSubmit={(type, quantity, note) => {
-          if (stockProduct) recordTransaction(stockProduct.id, type, quantity, note);
+          if (stockProduct) recordTransaction(stockProduct.id, type, quantity, note, authorizationToken);
+          setAuthorizationToken(null);
           setStockProduct(null);
         }}
       />
@@ -259,7 +278,8 @@ export function Products({ inventory, shopeeSync }) {
         title="Delete product?"
         message={`This will permanently remove "${deletingProduct?.name}" and its transaction history.`}
         onConfirm={() => {
-          if (deletingId) deleteProduct(deletingId);
+          if (deletingId) deleteProduct(deletingId, authorizationToken);
+          setAuthorizationToken(null);
           setDeletingId(null);
         }}
         onCancel={() => setDeletingId(null)}

@@ -10,6 +10,8 @@ import { useInventory } from "./hooks/useInventory";
 import { useShopeeSync } from "./hooks/useShopeeSync";
 import { Auth } from "./components/Auth";
 import { supabase } from "./lib/supabase";
+import { useOperationSecurity } from "./hooks/useOperationSecurity";
+import { AdminAuthorizationDialog } from "./components/AdminAuthorizationDialog";
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
@@ -17,7 +19,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [authLoading, setAuthLoading] = useState(Boolean(supabase));
-  const inventory = useInventory(user);
+  const operationSecurity = useOperationSecurity(supabase, user);
+  const inventory = useInventory(user, operationSecurity);
   const shopeeSync = useShopeeSync();
 
   useEffect(() => {
@@ -80,6 +83,16 @@ export default function App() {
           {inventory.error} (click to dismiss)
         </button>
       )}
+      {operationSecurity.error && (
+        <button className="app-status app-status-error" onClick={() => window.location.reload()}>
+          {operationSecurity.error} (apply the latest Supabase schema, then click to reload)
+        </button>
+      )}
+      <AdminAuthorizationDialog
+        dialog={operationSecurity.authorizationDialog}
+        onSubmit={operationSecurity.submitAuthorization}
+        onCancel={operationSecurity.cancelAuthorization}
+      />
       <Sidebar page={page} onNavigate={setPage} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="app-main-column">
@@ -89,8 +102,8 @@ export default function App() {
           {page === "dashboard" && (
             <Dashboard inventory={inventory} onNavigate={setPage} shopeeSync={shopeeSync} />
           )}
-          {page === "products" && <Products inventory={inventory} shopeeSync={shopeeSync} />}
-          {page === "categories" && <Categories inventory={inventory} />}
+          {page === "products" && <Products inventory={inventory} shopeeSync={shopeeSync} operationSecurity={operationSecurity} />}
+          {page === "categories" && <Categories inventory={inventory} operationSecurity={operationSecurity} />}
           {page === "transactions" && <Transactions inventory={inventory} />}
           {page === "settings" && (
             <Settings
@@ -98,6 +111,7 @@ export default function App() {
               user={user}
               passwordRecovery={passwordRecovery}
               onRecoveryComplete={() => setPasswordRecovery(false)}
+              operationSecurity={operationSecurity}
             />
           )}
         </main>

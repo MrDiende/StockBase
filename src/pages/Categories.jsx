@@ -3,26 +3,34 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { CategoryModal } from "../components/CategoryModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 
-export function Categories({ inventory }) {
+export function Categories({ inventory, operationSecurity }) {
   const { categories, products, addCategory, updateCategory, deleteCategory } = inventory;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [authorizationToken, setAuthorizationToken] = useState(null);
 
-  const openAdd = () => {
+  const openAdd = async () => {
+    const grant = await operationSecurity.authorize("category.add");
+    if (operationSecurity.enabled && !grant) return;
+    setAuthorizationToken(grant);
     setEditing(null);
     setModalOpen(true);
   };
 
-  const openEdit = (c) => {
+  const openEdit = async (c) => {
+    const grant = await operationSecurity.authorize("category.update");
+    if (operationSecurity.enabled && !grant) return;
+    setAuthorizationToken(grant);
     setEditing(c);
     setModalOpen(true);
   };
 
   const handleSave = (data) => {
-    if (editing) updateCategory(editing.id, data);
-    else addCategory(data);
+    if (editing) updateCategory(editing.id, data, authorizationToken);
+    else addCategory(data, authorizationToken);
+    setAuthorizationToken(null);
     setModalOpen(false);
   };
 
@@ -64,7 +72,12 @@ export function Categories({ inventory }) {
                   <button className="icon-btn icon-btn-brand" onClick={() => openEdit(c)}>
                     <Pencil size={15} />
                   </button>
-                  <button className="icon-btn icon-btn-danger" onClick={() => setDeletingId(c.id)}>
+                  <button className="icon-btn icon-btn-danger" onClick={async () => {
+                    const grant = await operationSecurity.authorize("category.delete");
+                    if (operationSecurity.enabled && !grant) return;
+                    setAuthorizationToken(grant);
+                    setDeletingId(c.id);
+                  }}>
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -85,7 +98,8 @@ export function Categories({ inventory }) {
         title="Delete category?"
         message={`"${deletingCategory?.name}" will be removed. Products in this category will show as uncategorized.`}
         onConfirm={() => {
-          if (deletingId) deleteCategory(deletingId);
+          if (deletingId) deleteCategory(deletingId, authorizationToken);
+          setAuthorizationToken(null);
           setDeletingId(null);
         }}
         onCancel={() => setDeletingId(null)}

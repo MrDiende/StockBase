@@ -54,6 +54,9 @@ begin
   insert into public.profiles (user_id, role)
   values (new.id, 'admin')
   on conflict (user_id) do nothing;
+  insert into public.operation_security (user_id, enabled)
+  values (new.id, false)
+  on conflict (user_id) do nothing;
   return new;
 end;
 $$;
@@ -92,17 +95,20 @@ drop policy if exists "Public transaction access" on public.transactions;
 drop policy if exists "Users manage own categories" on public.categories;
 drop policy if exists "Users manage own products" on public.products;
 drop policy if exists "Users manage own transactions" on public.transactions;
+drop policy if exists "Users read own categories" on public.categories;
+drop policy if exists "Users read own products" on public.products;
+drop policy if exists "Users read own transactions" on public.transactions;
 drop policy if exists "Users manage own profile" on public.profiles;
 drop policy if exists "Admins read own profile" on public.profiles;
 drop policy if exists "Admins insert own profile" on public.profiles;
 drop policy if exists "Admins update own profile" on public.profiles;
 
-create policy "Users manage own categories" on public.categories
-  for all to authenticated using (public.is_admin() and auth.uid() = user_id) with check (public.is_admin() and auth.uid() = user_id);
-create policy "Users manage own products" on public.products
-  for all to authenticated using (public.is_admin() and auth.uid() = user_id) with check (public.is_admin() and auth.uid() = user_id);
-create policy "Users manage own transactions" on public.transactions
-  for all to authenticated using (public.is_admin() and auth.uid() = user_id) with check (public.is_admin() and auth.uid() = user_id);
+create policy "Users read own categories" on public.categories
+  for select to authenticated using (public.is_admin() and auth.uid() = user_id);
+create policy "Users read own products" on public.products
+  for select to authenticated using (public.is_admin() and auth.uid() = user_id);
+create policy "Users read own transactions" on public.transactions
+  for select to authenticated using (public.is_admin() and auth.uid() = user_id);
 create policy "Admins read own profile" on public.profiles
   for select to authenticated using (public.is_admin() and auth.uid() = user_id);
 create policy "Admins insert own profile" on public.profiles
@@ -189,3 +195,135 @@ begin
     alter publication supabase_realtime add table public.transactions;
   end if;
 end $$;
+create extension if not exists pgcrypto with schema extensions;
+
+create table if not exists public.operation_security (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  enabled boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.operation_authorizations (
+  token uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  operation text not null,
+  expires_at timestamptz not null
+);
+
+insert into public.operation_security (user_id, enabled)
+select id, false from auth.users
+on conflict (user_id) do nothing;
+
+alter table public.operation_security enable row level security;
+alter table public.operation_authorizations enable row level security;
+drop policy if exists "Users read own operation security" on public.operation_security;
+create policy "Users read own operation security" on public.operation_security
+  for select to authenticated using (auth.uid() = user_id);
+
+create or replace function public.authorize_operation(requested_operation text, admin_password text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, auth, extensions
+as $$
+declare
+  stored_hash text;
+  token uuid := gen_random_uuid();
+begin
+  select encrypted_password into stored_hash from auth.users where id = auth.uid();
+  if stored_hash is null or stored_hash not like '$%' or crypt(admin_password, stored_hash) <> stored_hash then
+    return null;
+  end if;
+  insert into public.operation_authorizations(token, user_id, operation, expires_at)
+  values (token, auth.uid(), requested_operation, now() + interval '2 minutes');
+  return token;
+end;
+$$;
+
+drop function if exists public.set_operation_security(boolean);
+create or replace function public.set_operation_security(next_enabled boolean, authorization_token uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if next_enabled then
+    delete from public.operation_authorizations
+    where token = authorization_token
+      and user_id = auth.uid()
+      and operation = 'security.enable'
+      and expires_at > now();
+    if not found then raise exception 'Admin authorization required'; end if;
+  end if;
+  insert into public.operation_security(user_id, enabled, updated_at)
+  values (auth.uid(), next_enabled, now())
+  on conflict (user_id) do update set enabled = excluded.enabled, updated_at = excluded.updated_at;
+end;
+$$;
+
+create or replace function public.inventory_mutation(operation text, payload jsonb, authorization_token uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  security_enabled boolean;
+  authorization_count integer;
+begin
+  select coalesce(enabled, false) into security_enabled
+  from public.operation_security where user_id = auth.uid();
+  if security_enabled then
+    delete from public.operation_authorizations
+    where token = authorization_token and user_id = auth.uid()
+      and operation = inventory_mutation.operation and expires_at > now();
+    get diagnostics authorization_count = row_count;
+    if authorization_count = 0 then raise exception 'Admin authorization required'; end if;
+  end if;
+
+  if operation = 'product.add' then
+    insert into public.products (id, user_id, name, sku, category_id, price, quantity, reorder_level, image, physical_store, shopee, created_at)
+    values ((payload->>'id'), auth.uid(), payload->>'name', payload->>'sku', payload->>'category_id',
+      (payload->>'price')::numeric, (payload->>'quantity')::numeric, (payload->>'reorder_level')::numeric,
+      payload->>'image', (payload->>'physical_store')::boolean, (payload->>'shopee')::boolean, (payload->>'created_at')::timestamptz);
+  elsif operation = 'product.update' then
+    update public.products set
+      name = coalesce(payload->'patch'->>'name', name), sku = coalesce(payload->'patch'->>'sku', sku),
+      category_id = coalesce(payload->'patch'->>'category_id', category_id),
+      price = coalesce((payload->'patch'->>'price')::numeric, price),
+      quantity = coalesce((payload->'patch'->>'quantity')::numeric, quantity),
+      reorder_level = coalesce((payload->'patch'->>'reorder_level')::numeric, reorder_level),
+      image = coalesce(payload->'patch'->>'image', image),
+      physical_store = coalesce((payload->'patch'->>'physical_store')::boolean, physical_store),
+      shopee = coalesce((payload->'patch'->>'shopee')::boolean, shopee)
+    where id = payload->>'id' and user_id = auth.uid();
+  elsif operation = 'product.delete' then
+    delete from public.products where id = payload->>'id' and user_id = auth.uid();
+  elsif operation = 'category.add' then
+    insert into public.categories (id, user_id, name, color, created_at)
+    values (payload->>'id', auth.uid(), payload->>'name', payload->>'color', (payload->>'created_at')::timestamptz);
+  elsif operation = 'category.update' then
+    update public.categories set name = coalesce(payload->'patch'->>'name', name), color = coalesce(payload->'patch'->>'color', color)
+    where id = payload->>'id' and user_id = auth.uid();
+  elsif operation = 'category.delete' then
+    delete from public.categories where id = payload->>'id' and user_id = auth.uid();
+  elsif operation = 'transaction.add' then
+    update public.products set quantity = case
+      when payload->>'type' = 'in' then quantity + (payload->>'quantity')::numeric
+      when payload->>'type' = 'out' then greatest(0, quantity - (payload->>'quantity')::numeric)
+      else (payload->>'quantity')::numeric end
+    where id = payload->>'product_id' and user_id = auth.uid();
+    insert into public.transactions (id, user_id, product_id, type, quantity, date, note)
+    values (payload->>'id', auth.uid(), payload->>'product_id', payload->>'type', (payload->>'quantity')::numeric,
+      (payload->>'date')::timestamptz, coalesce(payload->>'note', ''));
+  elsif operation = 'inventory.reset' then
+    delete from public.transactions where user_id = auth.uid();
+    delete from public.products where user_id = auth.uid();
+    delete from public.categories where user_id = auth.uid();
+  else
+    raise exception 'Unsupported inventory operation';
+  end if;
+  return jsonb_build_object('ok', true);
+end;
+$$;

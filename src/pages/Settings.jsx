@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const initialProfile = {
@@ -7,7 +7,7 @@ const initialProfile = {
   contactNumber: "",
 };
 
-export function Settings({ supabase, user, passwordRecovery = false, onRecoveryComplete }) {
+export function Settings({ supabase, user, passwordRecovery = false, onRecoveryComplete, operationSecurity }) {
   const [profile, setProfile] = useState(initialProfile);
   const [savedProfile, setSavedProfile] = useState(initialProfile);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -22,6 +22,7 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
   const [changingPassword, setChangingPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [savingSecurity, setSavingSecurity] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -85,6 +86,24 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
     setError("");
   };
 
+  const toggleOperationSecurity = async () => {
+    setError("");
+    setMessage("");
+    setSavingSecurity(true);
+    try {
+      const grant = operationSecurity.enabled
+        ? null
+        : await operationSecurity.authorize("security.enable", true);
+      if (!operationSecurity.enabled && !grant) return;
+      await operationSecurity.setSecurity(!operationSecurity.enabled, grant);
+      setMessage(`Operation Security is now ${!operationSecurity.enabled ? "ON" : "OFF"}.`);
+    } catch (toggleError) {
+      setError(toggleError.message);
+    } finally {
+      setSavingSecurity(false);
+    }
+  };
+
   const changePassword = async (event) => {
     event.preventDefault();
     setMessage("");
@@ -132,6 +151,30 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
         <div className="card">Loading settings...</div>
       ) : (
         <div className="settings-grid">
+          <div className="card form">
+            <div>
+              <h2 className="card-title">Operation Security</h2>
+              <p className="card-subtitle">Require admin authorization for inventory changes.</p>
+            </div>
+            <button
+              className={`operation-security-control ${operationSecurity.enabled ? "operation-security-control-on" : ""}`}
+              type="button"
+              onClick={toggleOperationSecurity}
+              disabled={savingSecurity || operationSecurity.loading}
+              aria-pressed={operationSecurity.enabled}
+            >
+              <span className="operation-security-status">
+                {operationSecurity.enabled ? <LockKeyhole size={18} /> : <UnlockKeyhole size={18} />}
+                <span>
+                  <strong>{operationSecurity.enabled ? "Security ON" : "Security OFF"}</strong>
+                  <small>{operationSecurity.enabled ? "Authorization required for changes" : "Changes are allowed without authorization"}</small>
+                </span>
+              </span>
+              <span className="operation-security-switch" aria-hidden="true">
+                <span className="operation-security-switch-thumb" />
+              </span>
+            </button>
+          </div>
           <form className="card form" onSubmit={updateProfile}>
             <div className="settings-card-heading">
               <div>

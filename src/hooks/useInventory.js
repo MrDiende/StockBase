@@ -126,7 +126,7 @@ const categoryRow = (category, userId) => ({
   user_id: userId,
 });
 
-export function useInventory(user) {
+export function useInventory(user, operationSecurity) {
   const [state, setState] = useState(() => (supabase ? normalizeState(emptyState) : loadState()));
   const [loading, setLoading] = useState(Boolean(supabase));
   const [error, setError] = useState("");
@@ -214,21 +214,23 @@ export function useInventory(user) {
     setError(`${message} ${details.message}`);
   }, []);
 
-  const addProduct = useCallback((product) => {
+  const addProduct = useCallback(async (product, authorizationToken = null) => {
     const next = { ...product, id: uid("prod"), createdAt: new Date().toISOString() };
     const duplicate = state.products.find((item) => item.name.trim().toLowerCase() === next.name.trim().toLowerCase());
     if (duplicate) {
       setError(`A product named "${next.name}" already exists.`);
       return;
     }
+    const grant = authorizationToken || await operationSecurity.authorize("product.add");
+    if (operationSecurity.enabled && !grant) return undefined;
     setState((prev) => ({ ...prev, products: [...prev.products, next] }));
-    if (supabase) supabase.from("products").insert(productRow(next, user.id)).then(({ error: insertError }) => {
+    if (supabase) supabase.rpc("inventory_mutation", { operation: "product.add", payload: productRow(next, user.id), authorization_token: grant }).then(({ error: insertError }) => {
       if (insertError) reportError("Could not save product.", insertError);
     });
     return next.id;
-  }, [reportError, state.products, user]);
+  }, [operationSecurity, reportError, state.products, user]);
 
-  const updateProduct = useCallback((id, patch) => {
+  const updateProduct = useCallback(async (id, patch, authorizationToken = null) => {
     if (patch.name) {
       const duplicate = state.products.find(
         (product) =>
@@ -239,6 +241,8 @@ export function useInventory(user) {
         return;
       }
     }
+    const grant = authorizationToken || await operationSecurity.authorize("product.update");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({
       ...prev,
       products: prev.products.map((product) => (product.id === id ? { ...product, ...patch } : product)),
@@ -254,37 +258,41 @@ export function useInventory(user) {
       if ("image" in patch) update.image = patch.image;
       if ("physicalStore" in patch) update.physical_store = patch.physicalStore;
       if ("syncedToShopee" in patch) update.shopee = patch.syncedToShopee;
-      supabase.from("products").update(update).eq("id", id).eq("user_id", user.id).then(({ error: updateError }) => {
+      supabase.rpc("inventory_mutation", { operation: "product.update", payload: { id, patch: update }, authorization_token: grant }).then(({ error: updateError }) => {
         if (updateError) reportError("Could not update product.", updateError);
       });
     }
-  }, [reportError, state.products, user]);
+  }, [operationSecurity, reportError, state.products, user]);
 
-  const deleteProduct = useCallback((id) => {
+  const deleteProduct = useCallback(async (id, authorizationToken = null) => {
+    const grant = authorizationToken || await operationSecurity.authorize("product.delete");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({
       ...prev,
       products: prev.products.filter((product) => product.id !== id),
       transactions: prev.transactions.filter((transaction) => transaction.productId !== id),
     }));
-    if (supabase) supabase.from("products").delete().eq("id", id).eq("user_id", user.id).then(({ error: deleteError }) => {
+    if (supabase) supabase.rpc("inventory_mutation", { operation: "product.delete", payload: { id }, authorization_token: grant }).then(({ error: deleteError }) => {
       if (deleteError) reportError("Could not delete product.", deleteError);
     });
-  }, [reportError, user]);
+  }, [operationSecurity, reportError, user]);
 
-  const addCategory = useCallback((category) => {
+  const addCategory = useCallback(async (category, authorizationToken = null) => {
     const next = { ...category, id: uid("cat"), createdAt: new Date().toISOString() };
     const duplicate = state.categories.find((item) => item.name.trim().toLowerCase() === next.name.trim().toLowerCase());
     if (duplicate) {
       setError(`A category named "${next.name}" already exists.`);
       return;
     }
+    const grant = authorizationToken || await operationSecurity.authorize("category.add");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({ ...prev, categories: [...prev.categories, next] }));
-    if (supabase) supabase.from("categories").insert(categoryRow(next, user.id)).then(({ error: insertError }) => {
+    if (supabase) supabase.rpc("inventory_mutation", { operation: "category.add", payload: categoryRow(next, user.id), authorization_token: grant }).then(({ error: insertError }) => {
       if (insertError) reportError("Could not save category.", insertError);
     });
-  }, [reportError, state.categories, user]);
+  }, [operationSecurity, reportError, state.categories, user]);
 
-  const updateCategory = useCallback((id, patch) => {
+  const updateCategory = useCallback(async (id, patch, authorizationToken = null) => {
     if (patch.name) {
       const duplicate = state.categories.find(
         (category) => category.id !== id && category.name.trim().toLowerCase() === patch.name.trim().toLowerCase()
@@ -294,26 +302,30 @@ export function useInventory(user) {
         return;
       }
     }
+    const grant = authorizationToken || await operationSecurity.authorize("category.update");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({
       ...prev,
       categories: prev.categories.map((category) => (category.id === id ? { ...category, ...patch } : category)),
     }));
-    if (supabase)     supabase.from("categories").update(patch).eq("id", id).eq("user_id", user.id).then(({ error: updateError }) => {
+    if (supabase) supabase.rpc("inventory_mutation", { operation: "category.update", payload: { id, patch }, authorization_token: grant }).then(({ error: updateError }) => {
       if (updateError) reportError("Could not update category.", updateError);
     });
-  }, [reportError, state.categories, user]);
+  }, [operationSecurity, reportError, state.categories, user]);
 
-  const deleteCategory = useCallback((id) => {
+  const deleteCategory = useCallback(async (id, authorizationToken = null) => {
+    const grant = authorizationToken || await operationSecurity.authorize("category.delete");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({
       ...prev,
       categories: prev.categories.filter((category) => category.id !== id),
     }));
-    if (supabase) supabase.from("categories").delete().eq("id", id).eq("user_id", user.id).then(({ error: deleteError }) => {
+    if (supabase) supabase.rpc("inventory_mutation", { operation: "category.delete", payload: { id }, authorization_token: grant }).then(({ error: deleteError }) => {
       if (deleteError) reportError("Could not delete category.", deleteError);
     });
-  }, [reportError, user]);
+  }, [operationSecurity, reportError, user]);
 
-  const recordTransaction = useCallback((productId, type, quantity, note) => {
+  const recordTransaction = useCallback(async (productId, type, quantity, note, authorizationToken = null) => {
     const transaction = {
       id: uid("txn"),
       productId,
@@ -322,6 +334,8 @@ export function useInventory(user) {
       date: new Date().toISOString(),
       note,
     };
+    const grant = authorizationToken || await operationSecurity.authorize("transaction.add");
+    if (operationSecurity.enabled && !grant) return;
     setState((prev) => ({
       ...prev,
       products: prev.products.map((product) => {
@@ -338,34 +352,25 @@ export function useInventory(user) {
       const nextQuantity =
         type === "in" ? product.quantity + quantity :
         type === "out" ? Math.max(0, product.quantity - quantity) : quantity;
-      Promise.all([
-        supabase.from("products").update({ quantity: nextQuantity }).eq("id", productId).eq("user_id", user.id),
-        supabase.from("transactions").insert({
-          id: transaction.id,
-          product_id: productId,
-          type,
-          quantity,
-          date: transaction.date,
-          note,
-          user_id: user.id,
-        }),
-      ]).then(([productResult, transactionResult]) => {
-        const failure = productResult.error || transactionResult.error;
-        if (failure) reportError("Could not save stock movement.", failure);
+      supabase.rpc("inventory_mutation", { operation: "transaction.add", payload: {
+        id: transaction.id, product_id: productId, type, quantity, date: transaction.date, note,
+      }, authorization_token: grant }).then(({ error: mutationError }) => {
+        if (mutationError) reportError("Could not save stock movement.", mutationError);
       });
     }
-  }, [reportError, state.products, user]);
+  }, [operationSecurity, reportError, state.products, user]);
 
-  const resetData = useCallback(() => {
+  const resetData = useCallback(async () => {
+    const grant = await operationSecurity.authorize("inventory.reset");
+    if (operationSecurity.enabled && !grant) return;
     setState(emptyState);
     if (supabase) {
-      Promise.all([
-        supabase.from("transactions").delete().eq("user_id", user.id),
-        supabase.from("products").delete().eq("user_id", user.id),
-        supabase.from("categories").delete().eq("user_id", user.id),
-      ]).catch((resetError) => reportError("Could not reset remote inventory.", resetError));
+      supabase.rpc("inventory_mutation", { operation: "inventory.reset", payload: {}, authorization_token: grant })
+        .then(({ error: resetError }) => {
+          if (resetError) reportError("Could not reset remote inventory.", resetError);
+        });
     }
-  }, [reportError, user]);
+  }, [operationSecurity, reportError]);
 
   return {
     ...state,
