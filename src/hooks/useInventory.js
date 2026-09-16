@@ -76,7 +76,7 @@ function uniqueBy(items, key) {
 const toProduct = (row) => ({
   id: row.id,
   name: row.name,
-  sku: row.sku,
+  sku: row.product_code,
   categoryId: row.category_id,
   price: Number(row.price),
   quantity: Number(row.quantity),
@@ -106,7 +106,7 @@ const toTransaction = (row) => ({
 const productRow = (product, userId) => ({
   id: product.id,
   name: product.name,
-  sku: product.sku,
+  product_code: product.sku,
   category_id: product.categoryId,
   price: product.price,
   quantity: product.quantity,
@@ -250,7 +250,7 @@ export function useInventory(user, operationSecurity) {
     if (supabase) {
       const update = {};
       if ("name" in patch) update.name = patch.name;
-      if ("sku" in patch) update.sku = patch.sku;
+      if ("sku" in patch) update.product_code = patch.sku;
       if ("categoryId" in patch) update.category_id = patch.categoryId;
       if ("price" in patch) update.price = patch.price;
       if ("quantity" in patch) update.quantity = patch.quantity;

@@ -113,7 +113,7 @@ export function Products({ inventory, shopeeSync, operationSecurity }) {
             className="input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or SKU..."
+            placeholder="Search by name or Product Code..."
           />
         </div>
         <div className="toolbar-filters">

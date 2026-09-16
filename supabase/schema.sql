@@ -10,7 +10,7 @@ create table if not exists public.products (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
-  sku text not null,
+  product_code text not null,
   category_id text references public.categories(id) on delete set null,
   price numeric not null default 0,
   quantity numeric not null default 0,
@@ -20,6 +20,19 @@ create table if not exists public.products (
   shopee boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'products' and column_name = 'sku'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'products' and column_name = 'product_code'
+  ) then
+    alter table public.products rename column sku to product_code;
+  end if;
+end $$;
 
 create table if not exists public.transactions (
   id text primary key,
@@ -248,11 +261,11 @@ security definer
 set search_path = public
 as $$
 begin
-  if next_enabled then
+  if not next_enabled then
     delete from public.operation_authorizations
     where token = authorization_token
       and user_id = auth.uid()
-      and operation = 'security.enable'
+      and operation = 'security.disable'
       and expires_at > now();
     if not found then raise exception 'Admin authorization required'; end if;
   end if;
@@ -283,13 +296,13 @@ begin
   end if;
 
   if operation = 'product.add' then
-    insert into public.products (id, user_id, name, sku, category_id, price, quantity, reorder_level, image, physical_store, shopee, created_at)
-    values ((payload->>'id'), auth.uid(), payload->>'name', payload->>'sku', payload->>'category_id',
+    insert into public.products (id, user_id, name, product_code, category_id, price, quantity, reorder_level, image, physical_store, shopee, created_at)
+    values ((payload->>'id'), auth.uid(), payload->>'name', payload->>'product_code', payload->>'category_id',
       (payload->>'price')::numeric, (payload->>'quantity')::numeric, (payload->>'reorder_level')::numeric,
       payload->>'image', (payload->>'physical_store')::boolean, (payload->>'shopee')::boolean, (payload->>'created_at')::timestamptz);
   elsif operation = 'product.update' then
     update public.products set
-      name = coalesce(payload->'patch'->>'name', name), sku = coalesce(payload->'patch'->>'sku', sku),
+      name = coalesce(payload->'patch'->>'name', name), product_code = coalesce(payload->'patch'->>'product_code', product_code),
       category_id = coalesce(payload->'patch'->>'category_id', category_id),
       price = coalesce((payload->'patch'->>'price')::numeric, price),
       quantity = coalesce((payload->'patch'->>'quantity')::numeric, quantity),

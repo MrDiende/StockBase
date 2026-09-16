@@ -162,7 +162,7 @@ export function ProductModal({ open, onClose, onSave, categories, products, init
 
           <div className="field form-grid-full">
             <label className="field-label">
-              SKU <span className="field-hint">(auto-generated)</span>
+              Product Code <span className="field-hint">(auto-generated)</span>
             </label>
             <input className="input input-readonly" value={form.sku} readOnly disabled />
           </div>

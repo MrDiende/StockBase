@@ -53,7 +53,7 @@ export function useOperationSecurity(supabase, user) {
   }, [dialog]);
 
   const setSecurity = useCallback(async (nextEnabled, grant = null) => {
-    if (nextEnabled) {
+    if (!nextEnabled) {
       if (!grant) throw new Error("Admin authorization is required.");
     }
     const { error } = await supabase.rpc("set_operation_security", {

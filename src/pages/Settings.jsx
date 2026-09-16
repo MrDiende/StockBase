@@ -92,9 +92,9 @@ export function Settings({ supabase, user, passwordRecovery = false, onRecoveryC
     setSavingSecurity(true);
     try {
       const grant = operationSecurity.enabled
-        ? null
-        : await operationSecurity.authorize("security.enable", true);
-      if (!operationSecurity.enabled && !grant) return;
+        ? await operationSecurity.authorize("security.disable", true)
+        : null;
+      if (operationSecurity.enabled && !grant) return;
       await operationSecurity.setSecurity(!operationSecurity.enabled, grant);
       setMessage(`Operation Security is now ${!operationSecurity.enabled ? "ON" : "OFF"}.`);
     } catch (toggleError) {
