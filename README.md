@@ -18,6 +18,7 @@ admin authentication, and a simulated Shopee synchronization workflow.
 - Profile information stored per user in Supabase with row-level security.
 - Password reset emails through Supabase Authentication.
 - Live inventory updates across open sessions.
+- Optional Operation Security requiring admin authorization for inventory changes.
 
 ## Tech Stack
 
@@ -74,6 +75,30 @@ The `products` table includes:
 If an older database still has `warehouse_id` or
 `synced_to_shopee`, the schema migration renames those columns and converts
 existing values to the current boolean fields.
+
+### Operation Security
+
+Operation Security can be enabled from **Settings**. When it is enabled,
+StockBase requires the administrator's current password before applying
+inventory changes. This protects the following actions:
+
+- Adding, editing, or deleting products.
+- Adding, editing, or deleting categories.
+- Recording stock-in, stock-out, or adjustment transactions.
+- Resetting the inventory.
+
+The authorization token issued by Supabase is single-use, tied to the
+requested operation, and expires after two minutes. Disabling Operation
+Security also requires administrator authorization. Turning it off allows
+inventory changes without an additional password prompt.
+
+Operation Security depends on the `operation_security` and
+`operation_authorizations` tables and the `authorize_operation`,
+`set_operation_security`, and `inventory_mutation` database functions. Always
+run the complete `supabase/schema.sql` in the Supabase SQL Editor after
+installing or updating this feature. If the schema is missing, the Settings
+page displays an Operation Security error and inventory mutations cannot be
+authorized.
 
 ### Admin email and password
 
@@ -165,6 +190,20 @@ npm run preview
 
 The generated files are placed in `dist/`. This folder is created
 automatically and should not be committed.
+
+## Publish changes to GitHub
+
+The repository uses the `main` branch. After making changes, run:
+
+```bash
+git add .
+git commit -m "Update StockBase"
+git push origin main
+```
+
+Only commit source files and configuration that are safe to share. Keep local
+environment files such as `.env.local` out of GitHub. The Supabase URL and
+publishable key must be configured separately in the deployment platform.
 
 ## Deploy with Vercel
 
