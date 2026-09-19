@@ -1,3 +1,11 @@
+-- StockBase database schema
+-- Run this file in the Supabase SQL Editor.
+-- The statements are safe to run again after application updates.
+
+-- ============================================================================
+-- 1. Core inventory tables
+-- ============================================================================
+
 create table if not exists public.categories (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -6,6 +14,7 @@ create table if not exists public.categories (
   created_at timestamptz not null default now()
 );
 
+-- Products belong to one user and optionally reference a category.
 create table if not exists public.products (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -21,6 +30,7 @@ create table if not exists public.products (
   created_at timestamptz not null default now()
 );
 
+-- Rename the old SKU column when upgrading an older database.
 do $$
 begin
   if exists (
@@ -34,6 +44,7 @@ begin
   end if;
 end $$;
 
+-- Every stock change is recorded as a transaction.
 create table if not exists public.transactions (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -44,6 +55,7 @@ create table if not exists public.transactions (
   note text not null default ''
 );
 
+-- One profile is created for each authenticated administrator.
 create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   role text not null default 'admin' check (role = 'admin'),
@@ -53,9 +65,14 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Keep the profile role restricted to administrators.
 alter table public.profiles add column if not exists role text not null default 'admin';
 alter table public.profiles drop constraint if exists profiles_role_check;
 alter table public.profiles add constraint profiles_role_check check (role = 'admin');
+
+-- ============================================================================
+-- 2. Authentication helpers
+-- ============================================================================
 
 create or replace function public.create_admin_profile()
 returns trigger
@@ -97,6 +114,10 @@ as $$
   );
 $$;
 
+-- ============================================================================
+-- 3. Row-level security
+-- ============================================================================
+
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.transactions enable row level security;
@@ -130,12 +151,20 @@ create policy "Admins update own profile" on public.profiles
   for update to authenticated using (public.is_admin() and auth.uid() = user_id)
   with check (public.is_admin() and auth.uid() = user_id and role = 'admin');
 
+-- Prevent duplicate names for the same user while allowing different users
+-- to use the same product or category names.
+
+-- ============================================================================
+-- 4. Data integrity and compatibility migrations
+-- ============================================================================
+
 create unique index if not exists products_name_unique
   on public.products (user_id, lower(trim(name)));
 
 create unique index if not exists categories_name_unique
   on public.categories (user_id, lower(trim(name)));
 
+-- Rename legacy Shopee and warehouse columns when upgrading older databases.
 do $$
 begin
   if exists (
@@ -165,6 +194,7 @@ begin
   end if;
 end $$;
 
+-- Normalize legacy warehouse values to the current boolean field.
 do $$
 begin
   if exists (
@@ -187,6 +217,10 @@ update public.products
 set physical_store = true
 where physical_store is distinct from true;
 
+-- ============================================================================
+-- 5. Realtime inventory updates
+-- ============================================================================
+
 do $$
 begin
   if not exists (
@@ -208,6 +242,13 @@ begin
     alter publication supabase_realtime add table public.transactions;
   end if;
 end $$;
+
+-- ============================================================================
+-- 6. Operation Security
+-- ============================================================================
+-- When enabled, inventory_mutation requires a short-lived authorization token
+-- created by authorize_operation after the administrator's password is checked.
+
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.operation_security (
@@ -229,6 +270,7 @@ on conflict (user_id) do nothing;
 
 alter table public.operation_security enable row level security;
 alter table public.operation_authorizations enable row level security;
+
 drop policy if exists "Users read own operation security" on public.operation_security;
 create policy "Users read own operation security" on public.operation_security
   for select to authenticated using (auth.uid() = user_id);
@@ -253,6 +295,7 @@ begin
 end;
 $$;
 
+-- Disabling Operation Security requires a matching security.disable token.
 drop function if exists public.set_operation_security(boolean);
 create or replace function public.set_operation_security(next_enabled boolean, authorization_token uuid default null)
 returns void
@@ -275,6 +318,8 @@ begin
 end;
 $$;
 
+-- All remote inventory writes go through this function so the authorization
+-- check cannot be bypassed by calling the tables directly from the client.
 create or replace function public.inventory_mutation(operation text, payload jsonb, authorization_token uuid)
 returns jsonb
 language plpgsql
@@ -295,6 +340,7 @@ begin
     if authorization_count = 0 then raise exception 'Admin authorization required'; end if;
   end if;
 
+  -- Product operations
   if operation = 'product.add' then
     insert into public.products (id, user_id, name, product_code, category_id, price, quantity, reorder_level, image, physical_store, shopee, created_at)
     values ((payload->>'id'), auth.uid(), payload->>'name', payload->>'product_code', payload->>'category_id',
@@ -313,6 +359,7 @@ begin
     where id = payload->>'id' and user_id = auth.uid();
   elsif operation = 'product.delete' then
     delete from public.products where id = payload->>'id' and user_id = auth.uid();
+  -- Category operations
   elsif operation = 'category.add' then
     insert into public.categories (id, user_id, name, color, created_at)
     values (payload->>'id', auth.uid(), payload->>'name', payload->>'color', (payload->>'created_at')::timestamptz);
@@ -321,6 +368,7 @@ begin
     where id = payload->>'id' and user_id = auth.uid();
   elsif operation = 'category.delete' then
     delete from public.categories where id = payload->>'id' and user_id = auth.uid();
+  -- Stock movement operation
   elsif operation = 'transaction.add' then
     update public.products set quantity = case
       when payload->>'type' = 'in' then quantity + (payload->>'quantity')::numeric
@@ -330,6 +378,7 @@ begin
     insert into public.transactions (id, user_id, product_id, type, quantity, date, note)
     values (payload->>'id', auth.uid(), payload->>'product_id', payload->>'type', (payload->>'quantity')::numeric,
       (payload->>'date')::timestamptz, coalesce(payload->>'note', ''));
+  -- Remove all inventory data for the current user.
   elsif operation = 'inventory.reset' then
     delete from public.transactions where user_id = auth.uid();
     delete from public.products where user_id = auth.uid();
